@@ -73,7 +73,7 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
-    IMasterStore,
+    IMainStore,
     IStore,
     )
 from lp.services.database.sqlbase import (
@@ -737,10 +737,10 @@ class MessageApprovalSet:
 
     def getHeldMessagesWithStatus(self, status):
         """See `IMessageApprovalSet`."""
-        # Use the master store as the messages will also be acknowledged and
+        # Use the main store as the messages will also be acknowledged and
         # we want to make sure we are acknowledging the same messages that we
         # iterate over.
-        return IMasterStore(MessageApproval).find(
+        return IMainStore(MessageApproval).find(
             (Message.rfc822msgid, Person.name),
             MessageApproval.status == status,
             MessageApproval.message == Message.id,
@@ -762,7 +762,7 @@ class MessageApprovalSet:
         except KeyError:
             raise AssertionError(
                 'Not an acknowledgeable state: %s' % status)
-        approvals = IMasterStore(MessageApproval).find(
+        approvals = IMainStore(MessageApproval).find(
             MessageApproval, MessageApproval.status == status)
         approvals.set(status=next_state)
 

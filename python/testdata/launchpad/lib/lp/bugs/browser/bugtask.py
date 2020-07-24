@@ -3592,17 +3592,17 @@ class BugTasksTableView(LaunchpadView):
                 ))
 
     def _getTableRowView(self, context, is_converted_to_question,
-                         is_conjoined_slave):
+                         is_conjoined_subordinate):
         """Get the view for the context, and initialize it.
 
-        The view's is_conjoined_slave and is_converted_to_question
+        The view's is_conjoined_subordinate and is_converted_to_question
         attributes are set, as well as the edit view.
         """
         view = getMultiAdapter(
             (context, self.request),
             name='+bugtasks-and-nominations-table-row')
         view.is_converted_to_question = is_converted_to_question
-        view.is_conjoined_slave = is_conjoined_slave
+        view.is_conjoined_subordinate = is_conjoined_subordinate
 
         view.edit_view = getMultiAdapter(
             (context, self.request), name='+edit-form')
@@ -3658,7 +3658,7 @@ class BugTasksTableView(LaunchpadView):
             list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
                 ids, need_validity=True))
 
-        # Build a cache we can pass on to getConjoinedMaster(), so that
+        # Build a cache we can pass on to getConjoinedMain(), so that
         # it doesn't have to iterate over all the bug tasks in each loop
         # iteration.
         bugtasks_by_package = bug.getBugTasksByPackageName(all_bugtasks)
@@ -3682,11 +3682,11 @@ class BugTasksTableView(LaunchpadView):
                         (parent, self.request),
                         name='+bugtasks-and-nominations-table-row'))
 
-            conjoined_master = bugtask.getConjoinedMaster(
+            conjoined_main = bugtask.getConjoinedMain(
                 bugtasks, bugtasks_by_package)
             view = self._getTableRowView(
                 bugtask, is_converted_to_question,
-                conjoined_master is not None)
+                conjoined_main is not None)
             bugtask_and_nomination_views.append(view)
             target = bugtask.product or bugtask.distribution
             if not target:
@@ -3707,7 +3707,7 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
                           BugTaskPrivilegeMixin):
     """Browser class for rendering a bugtask row on the bug page."""
 
-    is_conjoined_slave = None
+    is_conjoined_subordinate = None
     is_converted_to_question = None
     target_link_title = None
     many_bugtasks = False
@@ -3739,7 +3739,7 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
             # time.
             expandable=(not self.many_bugtasks and self.canSeeTaskDetails()),
             indent_task=ISeriesBugTarget.providedBy(self.context.target),
-            is_conjoined_slave=self.is_conjoined_slave,
+            is_conjoined_subordinate=self.is_conjoined_subordinate,
             task_link=task_link,
             edit_link=edit_link,
             can_edit=can_edit,
@@ -3777,13 +3777,13 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
         It is independent of whether they can *change* the status; you
         need to expand the details to see any milestone set.
         """
-        assert self.is_conjoined_slave is not None, (
-            'is_conjoined_slave should be set before rendering the page.')
+        assert self.is_conjoined_subordinate is not None, (
+            'is_conjoined_subordinate should be set before rendering the page.')
         assert self.is_converted_to_question is not None, (
             'is_converted_to_question should be set before rendering the'
             ' page.')
         return (self.displayEditForm() and
-                not self.is_conjoined_slave and
+                not self.is_conjoined_subordinate and
                 self.context.bug.duplicateof is None and
                 not self.is_converted_to_question)
 
@@ -3798,9 +3798,9 @@ class BugTaskTableRowView(LaunchpadView, BugTaskBugWatchMixin,
         """Get the series to which this task is targeted."""
         return self._getSeriesTargetNameHelper(self.context)
 
-    def getConjoinedMasterName(self):
-        """Get the conjoined master's name for displaying."""
-        return self._getSeriesTargetNameHelper(self.context.conjoined_master)
+    def getConjoinedMainName(self):
+        """Get the conjoined main's name for displaying."""
+        return self._getSeriesTargetNameHelper(self.context.conjoined_main)
 
     @property
     def bugtask_icon(self):

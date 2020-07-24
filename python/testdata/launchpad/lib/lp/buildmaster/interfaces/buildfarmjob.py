@@ -31,8 +31,8 @@ from zope.schema import (
     )
 
 from lp import _
-from lp.buildmaster.enums import BuildFarmJobType
-from lp.buildmaster.interfaces.builder import IBuilder
+from lp.buildmain.enums import BuildFarmJobType
+from lp.buildmain.interfaces.builder import IBuilder
 from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.soyuz.interfaces.processor import IProcessor
 
@@ -273,7 +273,7 @@ class IBuildFarmJob(Interface):
     def setLog(log):
         """Set the `LibraryFileAlias` that contains the job log."""
 
-    def updateStatus(status, builder=None, slave_status=None,
+    def updateStatus(status, builder=None, subordinate_status=None,
                      date_started=None, date_finished=None):
         """Update job metadata when the build status changes.
 

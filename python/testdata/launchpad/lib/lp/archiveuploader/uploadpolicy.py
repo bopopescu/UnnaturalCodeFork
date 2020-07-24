@@ -299,7 +299,7 @@ class InsecureUploadPolicy(AbstractUploadPolicy):
 
 
 class BuildDaemonUploadPolicy(AbstractUploadPolicy):
-    """The build daemon upload policy is invoked by the slave scanner."""
+    """The build daemon upload policy is invoked by the subordinate scanner."""
 
     name = 'buildd'
 

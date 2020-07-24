@@ -665,7 +665,7 @@ class IProductView(
             vocabulary='FilteredProductSeries',
             schema=IProductSeries,
             description=_(
-                'The series that represents the master or trunk branch. '
+                'The series that represents the main or trunk branch. '
                 'The Bazaar URL lp:<project> points to the development focus '
                 'series branch.')))
     development_focusID = Attribute("The development focus ID.")

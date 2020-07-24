@@ -27,19 +27,19 @@ from zope.component import getUtility
 from zope.interface import implements
 
 from lp.app.errors import NotFoundError
-from lp.buildmaster.interfaces.builder import (
+from lp.buildmain.interfaces.builder import (
     IBuilder,
     IBuilderSet,
     )
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSet
-from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
-from lp.buildmaster.model.buildqueue import (
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJobSet
+from lp.buildmain.interfaces.buildqueue import IBuildQueueSet
+from lp.buildmain.model.buildqueue import (
     BuildQueue,
     specific_job_classes,
     )
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.interfaces import (
-    ISlaveStore,
+    ISubordinateStore,
     IStore,
     )
 from lp.services.database.sqlbase import (
@@ -120,7 +120,7 @@ class Builder(SQLBase):
         """See IBuilder"""
         # XXX cprov 2007-04-17: ideally we should be able to notify the
         # the buildd-admins about FAILED builders. One alternative is to
-        # make the buildd_cronscript (slave-scanner, in this case) to exit
+        # make the buildd_cronscript (subordinate-scanner, in this case) to exit
         # with error, for those cases buildd-sequencer automatically sends
         # an email to admins with the script output.
         self.builderok = False
@@ -140,13 +140,13 @@ class Builder(SQLBase):
             return getUtility(IBuildFarmJobSet).getBuildsForBuilder(
                 self, status=build_state, user=user)
 
-    def _getSlaveScannerLogger(self):
-        """Return the logger instance from buildd-slave-scanner.py."""
+    def _getSubordinateScannerLogger(self):
+        """Return the logger instance from buildd-subordinate-scanner.py."""
         # XXX cprov 20071120: Ideally the Launchpad logging system
         # should be able to configure the root-logger instead of creating
         # a new object, then the logger lookups won't require the specific
         # name argument anymore. See bug 164203.
-        logger = logging.getLogger('slave-scanner')
+        logger = logging.getLogger('subordinate-scanner')
         return logger
 
     def acquireBuildCandidate(self):
@@ -158,7 +158,7 @@ class Builder(SQLBase):
         return candidate
 
     def _findBuildCandidate(self):
-        """Find a candidate job for dispatch to an idle buildd slave.
+        """Find a candidate job for dispatch to an idle buildd subordinate.
 
         The pending BuildQueue item with the highest score for this builder
         or None if no candidate is available.
@@ -173,7 +173,7 @@ class Builder(SQLBase):
             qualified_query %= sub_query
             return qualified_query
 
-        logger = self._getSlaveScannerLogger()
+        logger = self._getSubordinateScannerLogger()
         candidate = None
 
         general_query = """
@@ -285,7 +285,7 @@ class BuilderSet(object):
 
     def getBuildQueueSizes(self):
         """See `IBuilderSet`."""
-        results = ISlaveStore(BuildQueue).find((
+        results = ISubordinateStore(BuildQueue).find((
             Count(),
             Sum(BuildQueue.estimated_duration),
             Processor,

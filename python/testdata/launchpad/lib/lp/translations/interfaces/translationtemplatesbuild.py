@@ -12,7 +12,7 @@ __all__ = [
 from lazr.restful.fields import Reference
 
 from lp import _
-from lp.buildmaster.interfaces.buildfarmjob import (
+from lp.buildmain.interfaces.buildfarmjob import (
     IBuildFarmJob,
     ISpecificBuildFarmJobSource,
     )

@@ -10,7 +10,7 @@ properly.
 import unittest
 
 from lp.services.log.logger import BufferLogger
-from lp.soyuz.scripts.ftpmasterbase import SoyuzScript
+from lp.soyuz.scripts.ftpmainbase import SoyuzScript
 from lp.testing.layers import LaunchpadZopelessLayer
 
 

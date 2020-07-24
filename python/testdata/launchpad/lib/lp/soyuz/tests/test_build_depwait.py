@@ -6,7 +6,7 @@ __metaclass__ = type
 import transaction
 from zope.component import getUtility
 
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.registry.interfaces.person import IPersonSet
 from lp.soyuz.enums import (
     ArchivePurpose,
@@ -59,7 +59,7 @@ class TestBuildDepWait(TestCaseWithFactory):
         with person_logged_in(self.admin):
             build.updateStatus(
                 BuildStatus.MANUALDEPWAIT,
-                slave_status={'dependencies': unicode(spn)})
+                subordinate_status={'dependencies': unicode(spn)})
             [bpph] = self.publisher.getPubBinaries(
                 binaryname=spn, distroseries=self.distroseries,
                 version=version, builder=self.builder, archive=self.archive,
@@ -82,7 +82,7 @@ class TestBuildDepWait(TestCaseWithFactory):
         with person_logged_in(self.admin):
             build.updateStatus(
                 BuildStatus.MANUALDEPWAIT,
-                slave_status={'dependencies': unicode(spn)})
+                subordinate_status={'dependencies': unicode(spn)})
             [bpph] = self.publisher.getPubBinaries(
                 binaryname=spn, distroseries=self.distroseries,
                 version=version, builder=self.builder, archive=self.archive,

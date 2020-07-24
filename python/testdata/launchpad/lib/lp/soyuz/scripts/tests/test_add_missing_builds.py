@@ -28,7 +28,7 @@ class TestAddMissingBuilds(TestCaseWithFactory):
     """Test the add-missing-builds.py script. """
 
     layer = LaunchpadZopelessLayer
-    dbuser = config.builddmaster.dbuser
+    dbuser = config.builddmain.dbuser
 
     def setUp(self):
         """Make a PPA and publish some sources that need builds."""

@@ -10,8 +10,8 @@ import hashlib
 from storm.store import Store
 from zope.security.management import checkPermission
 
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interfaces.packagebuild import IPackageBuild
 from lp.testing import (
     login,
     login_person,
@@ -42,17 +42,17 @@ class TestPackageBuildMixin(TestCaseWithFactory):
     def test_updateStatus_MANUALDEPWAIT_sets_dependencies(self):
         # updateStatus sets dependencies for a MANUALDEPWAIT build.
         self.package_build.updateStatus(
-            BuildStatus.MANUALDEPWAIT, slave_status={'dependencies': u'deps'})
+            BuildStatus.MANUALDEPWAIT, subordinate_status={'dependencies': u'deps'})
         self.assertEqual(u'deps', self.package_build.dependencies)
         self.package_build.updateStatus(
-            BuildStatus.MANUALDEPWAIT, slave_status={})
+            BuildStatus.MANUALDEPWAIT, subordinate_status={})
         self.assertEqual(None, self.package_build.dependencies)
 
     def test_updateStatus_unsets_dependencies_for_other_statuses(self):
         # updateStatus unsets existing dependencies when transitioning
         # to another state.
         self.package_build.updateStatus(
-            BuildStatus.MANUALDEPWAIT, slave_status={'dependencies': u'deps'})
+            BuildStatus.MANUALDEPWAIT, subordinate_status={'dependencies': u'deps'})
         self.assertEqual(u'deps', self.package_build.dependencies)
         self.package_build.updateStatus(BuildStatus.FULLYBUILT)
         self.assertEqual(None, self.package_build.dependencies)

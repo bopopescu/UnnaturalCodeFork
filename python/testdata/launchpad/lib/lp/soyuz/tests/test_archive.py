@@ -24,7 +24,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.registry.enums import (
     PersonVisibility,
     TeamMembershipPolicy,
@@ -1052,7 +1052,7 @@ class TestEnabledRestrictedBuilds(TestCaseWithFactory):
 class TestBuilddSecret(TestCaseWithFactory):
     """Test buildd_secret security.
 
-    The buildd_secret is used by the slave scanner when generating a
+    The buildd_secret is used by the subordinate scanner when generating a
     sources.list entry for the builder to access a private archive.  It is
     essentially the password to the archive for the builder.
     """
@@ -1447,7 +1447,7 @@ class TestFindDepCandidates(TestCaseWithFactory):
         archive, and compares it to the given expected value.
         The archive defaults to self.archive.
 
-        Also commits, since findDepCandidates uses the slave store.
+        Also commits, since findDepCandidates uses the subordinate store.
         """
         transaction.commit()
 

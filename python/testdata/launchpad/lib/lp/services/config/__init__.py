@@ -420,23 +420,23 @@ class DatabaseConfig:
     _config_section = None
     _db_config_attrs = frozenset([
         'dbuser',
-        'rw_main_master', 'rw_main_slave',
+        'rw_main_main', 'rw_main_subordinate',
         'db_statement_timeout', 'db_statement_timeout_precision',
         'isolation_level', 'soft_request_timeout',
         'storm_cache', 'storm_cache_size'])
     _db_config_required_attrs = frozenset([
-        'dbuser', 'rw_main_master', 'rw_main_slave'])
+        'dbuser', 'rw_main_main', 'rw_main_subordinate'])
 
     def __init__(self):
         self.reset()
 
     @property
-    def main_master(self):
-        return self.rw_main_master
+    def main_main(self):
+        return self.rw_main_main
 
     @property
-    def main_slave(self):
-        return self.rw_main_slave
+    def main_subordinate(self):
+        return self.rw_main_subordinate
 
     def override(self, **kwargs):
         """Override one or more config attributes.

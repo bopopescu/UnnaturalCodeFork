@@ -52,8 +52,8 @@ from lp.archiveuploader.utils import (
     re_isadeb,
     re_issource,
     )
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSet
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJobSet
 from lp.registry.enums import (
     INCLUSIVE_TEAM_POLICY,
     PersonVisibility,
@@ -80,7 +80,7 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
-    ISlaveStore,
+    ISubordinateStore,
     IStore,
     )
 from lp.services.database.sqlbase import (
@@ -945,7 +945,7 @@ class Archive(SQLBase):
             Component.name.is_in(components))
             for (archive, not_used, pocket, components) in deps])
 
-        return ISlaveStore(BinaryPackagePublishingHistory).find(
+        return ISubordinateStore(BinaryPackagePublishingHistory).find(
             BinaryPackagePublishingHistory,
             BinaryPackageName.name == dep_name,
             BinaryPackagePublishingHistory.binarypackagename ==

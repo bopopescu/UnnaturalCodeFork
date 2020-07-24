@@ -1413,10 +1413,10 @@ class TestBugChanges(TestCaseWithFactory):
 
         # Ensure that only the people subscribed to the bug that
         # gets marked as a duplicate are notified.
-        master_notifications = BugNotification.selectBy(
+        main_notifications = BugNotification.selectBy(
             bug=self.bug, orderBy='id')
         new_notifications = [
-            notification for notification in master_notifications
+            notification for notification in main_notifications
             if notification.id not in self.old_notification_ids]
         self.assertEqual(len(list(new_notifications)), 0)
 

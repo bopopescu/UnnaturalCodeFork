@@ -12,7 +12,7 @@ import pytz
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.interfaces.builder import IBuilderSet
+from lp.buildmain.interfaces.builder import IBuilderSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (

@@ -14,11 +14,11 @@ from testtools.matchers import (
 import transaction
 from zope.component import getUtility
 
-from lp.buildmaster.enums import (
+from lp.buildmain.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interfaces.buildfarmjob import (
+from lp.buildmain.interfaces.buildfarmjob import (
     IBuildFarmJobSource,
     InconsistentBuildFarmJobError,
     )

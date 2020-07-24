@@ -215,7 +215,7 @@ class GPGHandler:
             raise GPGVerificationError(signature.status.args)
 
         # supporting subkeys by retriving the full key from the
-        # keyserver and use the master key fingerprint.
+        # keyserver and use the main key fingerprint.
         try:
             key = self.retrieveKey(signature.fpr)
         except GPGKeyNotFoundError:

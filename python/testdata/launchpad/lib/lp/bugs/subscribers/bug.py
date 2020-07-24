@@ -145,10 +145,10 @@ def add_bug_change_notifications(bug_delta, old_bugtask=None,
     for change in changes:
         bug = bug_delta.bug
         if isinstance(change, BugDuplicateChange):
-            no_dupe_master_recipients = bug.getBugNotificationRecipients(
+            no_dupe_main_recipients = bug.getBugNotificationRecipients(
                 level=change.change_level)
             bug_delta.bug.addChange(
-                change, recipients=no_dupe_master_recipients)
+                change, recipients=no_dupe_main_recipients)
         elif (isinstance(change, BugTaskAssigneeChange) and
               new_subscribers is not None):
             for person in new_subscribers:

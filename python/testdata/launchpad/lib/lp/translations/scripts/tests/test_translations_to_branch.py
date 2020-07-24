@@ -21,7 +21,7 @@ from lp.registry.interfaces.teammembership import (
     )
 from lp.registry.model.productseries import ProductSeries
 from lp.services.config import config
-from lp.services.database.interfaces import ISlaveStore
+from lp.services.database.interfaces import ISubordinateStore
 from lp.services.log.logger import BufferLogger
 from lp.services.scripts.tests import run_script
 from lp.testing import (
@@ -160,11 +160,11 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         self.assertFalse(db_branch.pending_writes)
         self.assertNotEqual(
             db_branch.last_mirrored_id, tree.branch.last_revision())
-        # The export code works on a Branch from the slave store.  It
+        # The export code works on a Branch from the subordinate store.  It
         # shouldn't stop the scan request.
-        slave_series = ISlaveStore(productseries).get(
+        subordinate_series = ISubordinateStore(productseries).get(
             ProductSeries, productseries.id)
-        exporter._exportToBranch(slave_series)
+        exporter._exportToBranch(subordinate_series)
         self.assertEqual(
             db_branch.last_mirrored_id, tree.branch.last_revision())
         self.assertTrue(db_branch.pending_writes)

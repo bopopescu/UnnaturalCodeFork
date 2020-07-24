@@ -1,7 +1,7 @@
 # Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Soyuz buildd slave manager logic."""
+"""Soyuz buildd subordinate manager logic."""
 
 __metaclass__ = type
 
@@ -24,26 +24,26 @@ from twisted.internet.task import LoopingCall
 from twisted.python import log
 from zope.component import getUtility
 
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interactor import (
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interactor import (
     BuilderInteractor,
     extract_vitals_from_db,
     )
-from lp.buildmaster.interfaces.builder import (
+from lp.buildmain.interfaces.builder import (
     BuildDaemonError,
-    BuildSlaveFailure,
+    BuildSubordinateFailure,
     CannotBuild,
     CannotFetchFile,
     CannotResumeHost,
     IBuilderSet,
     )
-from lp.buildmaster.model.builder import Builder
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmain.model.builder import Builder
+from lp.buildmain.model.buildqueue import BuildQueue
 from lp.services.database.interfaces import IStore
 from lp.services.propertycache import get_property_cache
 
 
-BUILDD_MANAGER_LOG_NAME = "slave-scanner"
+BUILDD_MANAGER_LOG_NAME = "subordinate-scanner"
 
 
 class BuilderFactory:
@@ -127,11 +127,11 @@ class PrefetchedBuilderFactory:
 
 
 @defer.inlineCallbacks
-def assessFailureCounts(logger, vitals, builder, slave, interactor, exception):
+def assessFailureCounts(logger, vitals, builder, subordinate, interactor, exception):
     """View builder/job failure_count and work out which needs to die.
 
     :return: A Deferred that fires either immediately or after a virtual
-        slave has been reset.
+        subordinate has been reset.
     """
     # builder.currentjob hides a complicated query, don't run it twice.
     # See bug 623281 (Note that currentjob is a cachedproperty).
@@ -174,12 +174,12 @@ def assessFailureCounts(logger, vitals, builder, slave, interactor, exception):
             # The builder is dead, but in the virtual case it might be worth
             # resetting it.
             yield interactor.resetOrFail(
-                vitals, slave, builder, logger, exception)
+                vitals, subordinate, builder, logger, exception)
     else:
         # The job is the culprit!  Override its status to 'failed'
         # to make sure it won't get automatically dispatched again,
         # and remove the buildqueue request.  The failure should
-        # have already caused any relevant slave data to be stored
+        # have already caused any relevant subordinate data to be stored
         # on the build record so don't worry about that here.
         builder.resetFailureCount()
         build_job = current_job.specific_job.build
@@ -187,13 +187,13 @@ def assessFailureCounts(logger, vitals, builder, slave, interactor, exception):
         builder.currentjob.destroySelf()
 
         # N.B. We could try and call _handleStatus_PACKAGEFAIL here
-        # but that would cause us to query the slave for its status
-        # again, and if the slave is non-responsive it holds up the
+        # but that would cause us to query the subordinate for its status
+        # again, and if the subordinate is non-responsive it holds up the
         # next buildd scan.
     del get_property_cache(builder).currentjob
 
 
-class SlaveScanner:
+class SubordinateScanner:
     """A manager for a single builder."""
 
     # The interval between each poll cycle, in seconds.  We'd ideally
@@ -209,18 +209,18 @@ class SlaveScanner:
 
     # The time before deciding that a cancelling builder has failed, in
     # seconds.  This should normally be a multiple of SCAN_INTERVAL, and
-    # greater than abort_timeout in launchpad-buildd's slave BuildManager.
+    # greater than abort_timeout in launchpad-buildd's subordinate BuildManager.
     CANCEL_TIMEOUT = 180
 
     def __init__(self, builder_name, builder_factory, logger, clock=None,
                  interactor_factory=BuilderInteractor,
-                 slave_factory=BuilderInteractor.makeSlaveFromVitals,
+                 subordinate_factory=BuilderInteractor.makeSubordinateFromVitals,
                  behavior_factory=BuilderInteractor.getBuildBehavior):
         self.builder_name = builder_name
         self.builder_factory = builder_factory
         self.logger = logger
         self.interactor_factory = interactor_factory
-        self.slave_factory = slave_factory
+        self.subordinate_factory = subordinate_factory
         self.behavior_factory = behavior_factory
         # Use the clock if provided, so that tests can advance it.  Use the
         # reactor by default.
@@ -275,7 +275,7 @@ class SlaveScanner:
         2. Increment and assess failure counts on the builder and job.
 
         :return: A Deferred that fires either immediately or after a virtual
-            slave has been reset.
+            subordinate has been reset.
         """
         # Make sure that pending database updates are removed as it
         # could leave the database in an inconsistent state (e.g. The
@@ -286,7 +286,7 @@ class SlaveScanner:
         # the error.
         error_message = failure.getErrorMessage()
         if failure.check(
-            BuildSlaveFailure, CannotBuild, CannotResumeHost,
+            BuildSubordinateFailure, CannotBuild, CannotResumeHost,
             BuildDaemonError, CannotFetchFile):
             self.logger.info("Scanning %s failed with: %s" % (
                 self.builder_name, error_message))
@@ -301,7 +301,7 @@ class SlaveScanner:
         try:
             builder.handleFailure(self.logger)
             yield assessFailureCounts(
-                self.logger, vitals, builder, self.slave_factory(vitals),
+                self.logger, vitals, builder, self.subordinate_factory(vitals),
                 self.interactor_factory(), failure.value)
             transaction.commit()
         except Exception:
@@ -312,14 +312,14 @@ class SlaveScanner:
             transaction.abort()
 
     @defer.inlineCallbacks
-    def checkCancellation(self, vitals, slave, interactor):
+    def checkCancellation(self, vitals, subordinate, interactor):
         """See if there is a pending cancellation request.
 
         If the current build is in status CANCELLING then terminate it
         immediately.
 
         :return: A deferred whose value is True if we recovered the builder
-            by resuming a slave host, so that there is no need to update its
+            by resuming a subordinate host, so that there is no need to update its
             status.
         """
         if vitals.build_queue is None:
@@ -333,7 +333,7 @@ class SlaveScanner:
         try:
             if self.date_cancel is None:
                 self.logger.info("Cancelling build '%s'" % build.title)
-                yield slave.abort()
+                yield subordinate.abort()
                 self.date_cancel = self._clock.seconds() + self.CANCEL_TIMEOUT
                 defer.returnValue(False)
             else:
@@ -345,7 +345,7 @@ class SlaveScanner:
                         "Waiting for build '%s' to cancel" % build.title)
                     defer.returnValue(False)
                 else:
-                    raise BuildSlaveFailure(
+                    raise BuildSubordinateFailure(
                         "Build '%s' cancellation timed out" % build.title)
         except Exception as e:
             self.logger.info(
@@ -355,13 +355,13 @@ class SlaveScanner:
             vitals.build_queue.cancel()
             transaction.commit()
             value = yield interactor.resetOrFail(
-                vitals, slave, self.builder_factory[vitals.name], self.logger,
+                vitals, subordinate, self.builder_factory[vitals.name], self.logger,
                 e)
-            # value is not None if we resumed a slave host.
+            # value is not None if we resumed a subordinate host.
             defer.returnValue(value is not None)
 
     def getExpectedCookie(self, vitals):
-        """Return the build cookie expected to be held by the slave.
+        """Return the build cookie expected to be held by the subordinate.
 
         Calculating this requires hitting the DB, so it's cached based
         on the current BuildQueue.
@@ -387,26 +387,26 @@ class SlaveScanner:
         self.builder_factory.prescanUpdate()
         vitals = self.builder_factory.getVitals(self.builder_name)
         interactor = self.interactor_factory()
-        slave = self.slave_factory(vitals)
+        subordinate = self.subordinate_factory(vitals)
 
-        # Confirm that the DB and slave sides are in a valid, mutually
+        # Confirm that the DB and subordinate sides are in a valid, mutually
         # agreeable state.
         lost_reason = None
         if not vitals.builderok:
             lost_reason = '%s is disabled' % vitals.name
         else:
-            cancelled = yield self.checkCancellation(vitals, slave, interactor)
+            cancelled = yield self.checkCancellation(vitals, subordinate, interactor)
             if cancelled:
                 return
             lost = yield interactor.rescueIfLost(
-                vitals, slave, self.getExpectedCookie(vitals), self.logger)
+                vitals, subordinate, self.getExpectedCookie(vitals), self.logger)
             if lost:
                 lost_reason = '%s is lost' % vitals.name
 
-        # The slave is lost or the builder is disabled. We can't
+        # The subordinate is lost or the builder is disabled. We can't
         # continue to update the job status or dispatch a new job, so
         # just rescue the assigned job, if any, so it can be dispatched
-        # to another slave.
+        # to another subordinate.
         if lost_reason is not None:
             if vitals.build_queue is not None:
                 self.logger.warn(
@@ -416,22 +416,22 @@ class SlaveScanner:
                 transaction.commit()
             return
 
-        # We've confirmed that the slave state matches the DB. Continue
+        # We've confirmed that the subordinate state matches the DB. Continue
         # with updating the job status, or dispatching a new job if the
         # builder is idle.
         if vitals.build_queue is not None:
-            # Scan the slave and get the logtail, or collect the build
+            # Scan the subordinate and get the logtail, or collect the build
             # if it's ready.  Yes, "updateBuild" is a bad name.
             yield interactor.updateBuild(
-                vitals, slave, self.builder_factory, self.behavior_factory)
+                vitals, subordinate, self.builder_factory, self.behavior_factory)
         elif vitals.manual:
             # If the builder is in manual mode, don't dispatch anything.
             self.logger.debug(
                 '%s is in manual mode, not dispatching.' % vitals.name)
         else:
-            # See if there is a job we can dispatch to the builder slave.
+            # See if there is a job we can dispatch to the builder subordinate.
             builder = self.builder_factory[self.builder_name]
-            yield interactor.findAndStartJob(vitals, builder, slave)
+            yield interactor.findAndStartJob(vitals, builder, subordinate)
             if builder.currentjob is not None:
                 # After a successful dispatch we can reset the
                 # failure_count.
@@ -466,7 +466,7 @@ class NewBuildersScanner:
         return self.stopping_deferred
 
     def scan(self):
-        """If a new builder appears, create a SlaveScanner for it."""
+        """If a new builder appears, create a SubordinateScanner for it."""
         self.manager.builder_factory.update()
         new_builders = self.checkForNewBuilders()
         self.manager.addScanForBuilders(new_builders)
@@ -486,14 +486,14 @@ class BuilddManager(service.Service):
     """Main Buildd Manager service class."""
 
     def __init__(self, clock=None, builder_factory=None):
-        self.builder_slaves = []
+        self.builder_subordinates = []
         self.builder_factory = builder_factory or PrefetchedBuilderFactory()
         self.logger = self._setupLogger()
         self.new_builders_scanner = NewBuildersScanner(
             manager=self, clock=clock)
 
     def _setupLogger(self):
-        """Set up a 'slave-scanner' logger that redirects to twisted.
+        """Set up a 'subordinate-scanner' logger that redirects to twisted.
 
         Make it less verbose to avoid messing too much with the old code.
         """
@@ -511,20 +511,20 @@ class BuilddManager(service.Service):
 
     def startService(self):
         """Service entry point, called when the application starts."""
-        # Ask the NewBuildersScanner to add and start SlaveScanners for
+        # Ask the NewBuildersScanner to add and start SubordinateScanners for
         # each current builder, and any added in the future.
         self.new_builders_scanner.scheduleScan()
 
     def stopService(self):
         """Callback for when we need to shut down."""
         # XXX: lacks unit tests
-        # All the SlaveScanner objects need to be halted gracefully.
-        deferreds = [slave.stopping_deferred for slave in self.builder_slaves]
+        # All the SubordinateScanner objects need to be halted gracefully.
+        deferreds = [subordinate.stopping_deferred for subordinate in self.builder_subordinates]
         deferreds.append(self.new_builders_scanner.stopping_deferred)
 
         self.new_builders_scanner.stop()
-        for slave in self.builder_slaves:
-            slave.stopCycle()
+        for subordinate in self.builder_subordinates:
+            subordinate.stopCycle()
 
         # The 'stopping_deferred's are called back when the loops are
         # stopped, so we can wait on them all at once here before
@@ -535,10 +535,10 @@ class BuilddManager(service.Service):
     def addScanForBuilders(self, builders):
         """Set up scanner objects for the builders specified."""
         for builder in builders:
-            slave_scanner = SlaveScanner(
+            subordinate_scanner = SubordinateScanner(
                 builder, self.builder_factory, self.logger)
-            self.builder_slaves.append(slave_scanner)
-            slave_scanner.startCycle()
+            self.builder_subordinates.append(subordinate_scanner)
+            subordinate_scanner.startCycle()
 
-        # Return the slave list for the benefit of tests.
-        return self.builder_slaves
+        # Return the subordinate list for the benefit of tests.
+        return self.builder_subordinates

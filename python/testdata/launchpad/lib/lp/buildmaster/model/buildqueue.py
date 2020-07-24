@@ -28,9 +28,9 @@ from sqlobject import (
 from zope.component import getSiteManager
 from zope.interface import implements
 
-from lp.buildmaster.enums import BuildFarmJobType
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
-from lp.buildmaster.interfaces.buildqueue import (
+from lp.buildmain.enums import BuildFarmJobType
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJob
+from lp.buildmain.interfaces.buildqueue import (
     IBuildQueue,
     IBuildQueueSet,
     )

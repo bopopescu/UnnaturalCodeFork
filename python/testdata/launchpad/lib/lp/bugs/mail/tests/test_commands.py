@@ -584,13 +584,13 @@ class DuplicateEmailCommandTestCase(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_execute_bug(self):
-        master_bug = self.factory.makeBug()
+        main_bug = self.factory.makeBug()
         bug = self.factory.makeBug()
         login_person(bug.bugtasks[0].target.owner)
-        command = DuplicateEmailCommand('duplicate', [str(master_bug.id)])
+        command = DuplicateEmailCommand('duplicate', [str(main_bug.id)])
         exec_bug, event = command.execute(bug, None)
-        self.assertEqual(master_bug, exec_bug)
-        self.assertEqual(master_bug, bug.duplicateof)
+        self.assertEqual(main_bug, exec_bug)
+        self.assertEqual(main_bug, bug.duplicateof)
         self.assertTrue(IObjectModifiedEvent.providedBy(event))
 
     def test_execute_bug_params(self):

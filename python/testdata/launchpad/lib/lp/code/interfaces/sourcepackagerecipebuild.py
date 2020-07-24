@@ -24,8 +24,8 @@ from zope.schema import (
     )
 
 from lp import _
-from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
-from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.buildmain.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
+from lp.buildmain.interfaces.packagebuild import IPackageBuild
 from lp.code.interfaces.sourcepackagerecipe import (
     ISourcePackageRecipe,
     ISourcePackageRecipeData,

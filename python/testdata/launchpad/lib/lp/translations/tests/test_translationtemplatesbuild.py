@@ -9,7 +9,7 @@ from storm.store import Store
 from zope.component import getUtility
 from zope.interface.verify import verifyObject
 
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJob
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer

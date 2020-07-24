@@ -330,7 +330,7 @@ class LPForkingService(object):
 
     DEFAULT_PATH = '/var/run/launchpad_forking_service.sock'
 
-    # Permissions on the master socket (rw-rw----)
+    # Permissions on the main socket (rw-rw----)
     DEFAULT_PERMISSIONS = 00660
 
     # Wait no more than 5 minutes for children.
@@ -350,7 +350,7 @@ class LPForkingService(object):
     _fork_function = os.fork
 
     def __init__(self, path=DEFAULT_PATH, perms=DEFAULT_PERMISSIONS):
-        self.master_socket_path = path
+        self.main_socket_path = path
         self._perms = perms
         self._start_time = None
         self._should_terminate = threading.Event()
@@ -363,24 +363,24 @@ class LPForkingService(object):
         self._children_spawned = 0
         self._child_connect_timeout = self.CHILD_CONNECT_TIMEOUT
 
-    def _create_master_socket(self):
+    def _create_main_socket(self):
         self._server_socket = socket.socket(
             socket.AF_UNIX, socket.SOCK_STREAM)
-        self._server_socket.bind(self.master_socket_path)
+        self._server_socket.bind(self.main_socket_path)
         if self._perms is not None:
-            os.chmod(self.master_socket_path, self._perms)
+            os.chmod(self.main_socket_path, self._perms)
         self._server_socket.listen(5)
         self._server_socket.settimeout(self.SOCKET_TIMEOUT)
         trace.mutter('set socket timeout to: %s' % (self.SOCKET_TIMEOUT,))
 
-    def _cleanup_master_socket(self):
+    def _cleanup_main_socket(self):
         self._server_socket.close()
         try:
-            os.remove(self.master_socket_path)
+            os.remove(self.main_socket_path)
         except (OSError, IOError):
             # If we don't delete it, then we get 'address already in
             # use' failures.
-            trace.mutter('failed to cleanup: %s' % (self.master_socket_path,))
+            trace.mutter('failed to cleanup: %s' % (self.main_socket_path,))
 
     def _handle_sigchld(self, signum, frm):
         # We don't actually do anything here, we just want an interrupt
@@ -609,14 +609,14 @@ class LPForkingService(object):
         self._start_time = time.time()
         self._should_terminate.clear()
         self._register_signals()
-        self._create_master_socket()
-        trace.note('Listening on socket: %s' % (self.master_socket_path,))
+        self._create_main_socket()
+        trace.note('Listening on socket: %s' % (self.main_socket_path,))
         try:
             try:
                 self._do_loop()
             finally:
                 # Stop talking to others, we are shutting down
-                self._cleanup_master_socket()
+                self._cleanup_main_socket()
         except KeyboardInterrupt:
             # SIGINT received, try to shutdown cleanly
             pass

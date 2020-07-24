@@ -11,7 +11,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.tales import DurationFormatterAPI
 from lp.archivepublisher.utils import get_ppa_reference
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.webapp import canonical_url
@@ -312,7 +312,7 @@ class TestBuildNotify(TestCaseWithFactory):
         self.create_builds(self.archive)
         build = self.builds[BuildStatus.FAILEDTOBUILD.value]
         notify_owner = dedent("""
-            [builddmaster]
+            [builddmain]
             send_build_notification: True
             notify_owner: False
             """)
@@ -330,7 +330,7 @@ class TestBuildNotify(TestCaseWithFactory):
         self.create_builds(self.archive)
         build = self.builds[BuildStatus.FULLYBUILT.value]
         send_build_notification = dedent("""
-            [builddmaster]
+            [builddmain]
             send_build_notification: False
             """)
         config.push('send_build_notification', send_build_notification)

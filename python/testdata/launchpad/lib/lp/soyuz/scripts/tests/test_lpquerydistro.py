@@ -34,7 +34,7 @@ class TestLpQueryDistroScript(unittest.TestCase):
         if extra_args is None:
             extra_args = []
         script = os.path.join(
-            config.root, "scripts", "ftpmaster-tools", "lp-query-distro.py")
+            config.root, "scripts", "ftpmain-tools", "lp-query-distro.py")
         args = [sys.executable, script]
         args.extend(extra_args)
         process = subprocess.Popen(

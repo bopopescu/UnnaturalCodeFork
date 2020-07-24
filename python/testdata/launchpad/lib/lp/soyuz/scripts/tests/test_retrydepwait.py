@@ -5,7 +5,7 @@ import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.log.logger import DevNullLogger
@@ -48,7 +48,7 @@ class TestRetryDepwait(TestCaseWithFactory):
         # Builds with unsatisfied dependencies are not retried.
         self.build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': u'something'})
+            subordinate_status={'dependencies': u'something'})
         self.assertStatusAfterLoop(BuildStatus.MANUALDEPWAIT)
         self.assertEqual(1, self.build.updateDependencies.call_count)
 
@@ -99,7 +99,7 @@ class TestRetryDepwait(TestCaseWithFactory):
         self.assertEqual(BuildStatus.MANUALDEPWAIT, self.build.status)
         bpn = self.factory.getUniqueUnicode()
         self.build.updateStatus(
-            BuildStatus.MANUALDEPWAIT, slave_status={'dependencies': bpn})
+            BuildStatus.MANUALDEPWAIT, subordinate_status={'dependencies': bpn})
 
         # With no binary to satisfy the dependency, running the script
         # does nothing.

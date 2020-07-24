@@ -49,7 +49,7 @@ class IPOExportRequestSet(Interface):
          * The requested `TranslationFileFormat`.
          * The list of request record ids making up this request.
 
-        The objects are all read-only objects from the slave store.  The
+        The objects are all read-only objects from the subordinate store.  The
         request ids list should be passed to `removeRequest` when
         processing of the request completes.
         """

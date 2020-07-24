@@ -181,7 +181,7 @@ class BugNominationTestCase(TestCaseWithFactory):
 
     def test_approve_distroseries_source_package_then_retarget(self):
         # Retargeting a bugtarget with and approved nomination also
-        # retargets the master bug target.
+        # retargets the main bug target.
         target = self.factory.makeSourcePackage()
         series = target.distroseries
         with person_logged_in(series.distribution.owner):

@@ -45,12 +45,12 @@ from lp.app.errors import (
     NotFoundError,
     UnexpectedFormData,
     )
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.buildfarmjob import (
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interfaces.buildfarmjob import (
     InconsistentBuildFarmJobError,
     ISpecificBuildFarmJobSource,
     )
-from lp.buildmaster.model.buildfarmjob import BuildFarmJob
+from lp.buildmain.model.buildfarmjob import BuildFarmJob
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuildSource,
     )

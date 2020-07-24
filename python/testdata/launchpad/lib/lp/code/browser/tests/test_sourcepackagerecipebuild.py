@@ -12,7 +12,7 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.webapp import canonical_url
 from lp.soyuz.interfaces.processor import IProcessorSet
@@ -60,7 +60,7 @@ class TestSourcePackageRecipeBuild(BrowserTestCase):
         super(TestSourcePackageRecipeBuild, self).setUp()
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         self.chef = self.factory.makePerson(
-            displayname='Master Chef', name='chef')
+            displayname='Main Chef', name='chef')
         self.user = self.chef
         self.ppa = self.factory.makeArchive(
             displayname='Secret PPA', owner=self.chef, name='ppa')

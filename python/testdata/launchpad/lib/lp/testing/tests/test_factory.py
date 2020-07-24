@@ -16,7 +16,7 @@ from lp.bugs.interfaces.cve import (
     CveStatus,
     ICve,
     )
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.code.enums import (
     BranchType,
     CodeImportReviewStatus,

@@ -1,7 +1,7 @@
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Security adapters for the buildmaster package."""
+"""Security adapters for the buildmain package."""
 
 __metaclass__ = type
 __all__ = [
@@ -9,7 +9,7 @@ __all__ = [
     ]
 
 from lp.app.security import AnonymousAuthorization
-from lp.buildmaster.interfaces.builder import IBuilder
+from lp.buildmain.interfaces.builder import IBuilder
 
 
 class ViewBuilder(AnonymousAuthorization):

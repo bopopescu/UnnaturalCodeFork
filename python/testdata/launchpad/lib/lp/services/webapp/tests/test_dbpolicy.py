@@ -37,8 +37,8 @@ from lp.services.database.interfaces import (
     DEFAULT_FLAVOR,
     DisallowedStore,
     IDatabasePolicy,
-    IMasterStore,
-    ISlaveStore,
+    IMainStore,
+    ISubordinateStore,
     IStoreSelector,
     MAIN_STORE,
     MASTER_FLAVOR,
@@ -47,9 +47,9 @@ from lp.services.database.interfaces import (
 from lp.services.database.policy import (
     BaseDatabasePolicy,
     LaunchpadDatabasePolicy,
-    MasterDatabasePolicy,
-    SlaveDatabasePolicy,
-    SlaveOnlyDatabasePolicy,
+    MainDatabasePolicy,
+    SubordinateDatabasePolicy,
+    SubordinateOnlyDatabasePolicy,
     )
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import TestCase
@@ -69,7 +69,7 @@ class ImplicitDatabasePolicyTestCase(TestCase):
         for store in ALL_STORES:
             self.assertProvides(
                 getUtility(IStoreSelector).get(store, DEFAULT_FLAVOR),
-                IMasterStore)
+                IMainStore)
 
     def test_dbusers(self):
         store_selector = getUtility(IStoreSelector)
@@ -100,50 +100,50 @@ class BaseDatabasePolicyTestCase(ImplicitDatabasePolicyTestCase):
         self.assertProvides(self.policy, IDatabasePolicy)
 
 
-class SlaveDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
-    """Tests for the `SlaveDatabasePolicy`."""
+class SubordinateDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
+    """Tests for the `SubordinateDatabasePolicy`."""
 
     def setUp(self):
         if self.policy is None:
-            self.policy = SlaveDatabasePolicy()
-        super(SlaveDatabasePolicyTestCase, self).setUp()
+            self.policy = SubordinateDatabasePolicy()
+        super(SubordinateDatabasePolicyTestCase, self).setUp()
 
     def test_defaults(self):
         for store in ALL_STORES:
             self.assertProvides(
                 getUtility(IStoreSelector).get(store, DEFAULT_FLAVOR),
-                ISlaveStore)
+                ISubordinateStore)
 
-    def test_master_allowed(self):
+    def test_main_allowed(self):
         for store in ALL_STORES:
             self.assertProvides(
                 getUtility(IStoreSelector).get(store, MASTER_FLAVOR),
-                IMasterStore)
+                IMainStore)
 
 
-class SlaveOnlyDatabasePolicyTestCase(SlaveDatabasePolicyTestCase):
-    """Tests for the `SlaveDatabasePolicy`."""
+class SubordinateOnlyDatabasePolicyTestCase(SubordinateDatabasePolicyTestCase):
+    """Tests for the `SubordinateDatabasePolicy`."""
 
     def setUp(self):
-        self.policy = SlaveOnlyDatabasePolicy()
-        super(SlaveOnlyDatabasePolicyTestCase, self).setUp()
+        self.policy = SubordinateOnlyDatabasePolicy()
+        super(SubordinateOnlyDatabasePolicyTestCase, self).setUp()
 
-    def test_master_allowed(self):
+    def test_main_allowed(self):
         for store in ALL_STORES:
             self.failUnlessRaises(
                 DisallowedStore,
                 getUtility(IStoreSelector).get, store, MASTER_FLAVOR)
 
 
-class MasterDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
-    """Tests for the `MasterDatabasePolicy`."""
+class MainDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
+    """Tests for the `MainDatabasePolicy`."""
 
     def setUp(self):
-        self.policy = MasterDatabasePolicy()
-        super(MasterDatabasePolicyTestCase, self).setUp()
+        self.policy = MainDatabasePolicy()
+        super(MainDatabasePolicyTestCase, self).setUp()
 
-    def test_XMLRPCRequest_uses_MasterPolicy(self):
-        """XMLRPC should always use the master flavor, since they always
+    def test_XMLRPCRequest_uses_MainPolicy(self):
+        """XMLRPC should always use the main flavor, since they always
         use POST and do not support session cookies.
         """
         request = LaunchpadTestRequest(
@@ -151,22 +151,22 @@ class MasterDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
         setFirstLayer(request, IXMLRPCRequest)
         policy = getAdapter(request, IDatabasePolicy)
         self.failUnless(
-            isinstance(policy, MasterDatabasePolicy),
-            "Expected MasterDatabasePolicy, not %s." % policy)
+            isinstance(policy, MainDatabasePolicy),
+            "Expected MainDatabasePolicy, not %s." % policy)
 
-    def test_slave_allowed(self):
-        # We get the master store even if the slave was requested.
+    def test_subordinate_allowed(self):
+        # We get the main store even if the subordinate was requested.
         for store in ALL_STORES:
             self.assertProvides(
                 getUtility(IStoreSelector).get(store, SLAVE_FLAVOR),
-                ISlaveStore)
+                ISubordinateStore)
 
 
-class LaunchpadDatabasePolicyTestCase(SlaveDatabasePolicyTestCase):
+class LaunchpadDatabasePolicyTestCase(SubordinateDatabasePolicyTestCase):
     """Fuller LaunchpadDatabasePolicy tests are in the page tests.
 
     This test just checks the defaults, which is the same as the
-    slave policy for unauthenticated requests.
+    subordinate policy for unauthenticated requests.
     """
 
     def setUp(self):
@@ -178,8 +178,8 @@ class LaunchpadDatabasePolicyTestCase(SlaveDatabasePolicyTestCase):
 class LayerDatabasePolicyTestCase(TestCase):
     layer = FunctionalLayer
 
-    def test_FeedsLayer_uses_SlaveDatabasePolicy(self):
-        """FeedsRequest should use the SlaveDatabasePolicy since they
+    def test_FeedsLayer_uses_SubordinateDatabasePolicy(self):
+        """FeedsRequest should use the SubordinateDatabasePolicy since they
         are read-only in nature. Also we don't want to send session cookies
         over them.
         """
@@ -187,10 +187,10 @@ class LayerDatabasePolicyTestCase(TestCase):
             SERVER_URL='http://feeds.launchpad.dev')
         setFirstLayer(request, FeedsLayer)
         policy = IDatabasePolicy(request)
-        self.assertIsInstance(policy, SlaveOnlyDatabasePolicy)
+        self.assertIsInstance(policy, SubordinateOnlyDatabasePolicy)
 
-    def test_WebServiceRequest_uses_MasterDatabasePolicy(self):
-        """WebService requests should always use the master flavor, since
+    def test_WebServiceRequest_uses_MainDatabasePolicy(self):
+        """WebService requests should always use the main flavor, since
         it's likely that clients won't support cookies and thus mixing read
         and write requests will result in incoherent views of the data.
 
@@ -203,12 +203,12 @@ class LayerDatabasePolicyTestCase(TestCase):
         request = LaunchpadTestRequest(SERVER_URL=server_url)
         setFirstLayer(request, WebServiceLayer)
         policy = IDatabasePolicy(request)
-        self.assertIsInstance(policy, MasterDatabasePolicy)
+        self.assertIsInstance(policy, MainDatabasePolicy)
 
     def test_WebServiceRequest_uses_LaunchpadDatabasePolicy(self):
         """WebService requests with a session cookie will use the
         standard LaunchpadDatabasePolicy so their database queries
-        can be outsourced to a slave database when possible.
+        can be outsourced to a subordinate database when possible.
         """
         api_prefix = getUtility(
             IWebServiceConfiguration).active_versions[0]
@@ -237,11 +237,11 @@ class LayerDatabasePolicyTestCase(TestCase):
         self.assertIsInstance(policy, LaunchpadDatabasePolicy)
 
 
-class MasterFallbackTestCase(TestCase):
+class MainFallbackTestCase(TestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(MasterFallbackTestCase, self).setUp()
+        super(MainFallbackTestCase, self).setUp()
 
         self.pgbouncer_fixture = PGBouncerFixture()
 
@@ -254,104 +254,104 @@ class MasterFallbackTestCase(TestCase):
         # Generate a db connection string that will go via pgbouncer.
         conn_str_pgbouncer = 'dbname=%s host=localhost' % dbname
 
-        # Configure slave connections via pgbouncer, so we can shut them
-        # down. Master connections direct so they are unaffected.
-        config_key = 'master-slave-separation'
+        # Configure subordinate connections via pgbouncer, so we can shut them
+        # down. Main connections direct so they are unaffected.
+        config_key = 'main-subordinate-separation'
         config.push(config_key, dedent('''\
             [database]
-            rw_main_master: %s
-            rw_main_slave: %s
+            rw_main_main: %s
+            rw_main_subordinate: %s
             ''' % (conn_str_direct, conn_str_pgbouncer)))
         self.addCleanup(lambda: config.pop(config_key))
 
         self.useFixture(self.pgbouncer_fixture)
 
-    def test_can_shutdown_slave_only(self):
+    def test_can_shutdown_subordinate_only(self):
         '''Confirm that this TestCase's test infrastructure works as needed.
         '''
-        master_store = IMasterStore(Person)
-        slave_store = ISlaveStore(Person)
+        main_store = IMainStore(Person)
+        subordinate_store = ISubordinateStore(Person)
 
         # Both Stores work when pgbouncer is up.
-        master_store.get(Person, 1)
-        slave_store.get(Person, 1)
+        main_store.get(Person, 1)
+        subordinate_store.get(Person, 1)
 
-        # Slave Store breaks when pgbouncer is torn down. Master Store
+        # Subordinate Store breaks when pgbouncer is torn down. Main Store
         # is fine.
         self.pgbouncer_fixture.stop()
-        master_store.get(Person, 2)
-        self.assertRaises(DisconnectionError, slave_store.get, Person, 2)
+        main_store.get(Person, 2)
+        self.assertRaises(DisconnectionError, subordinate_store.get, Person, 2)
 
-    def test_startup_with_no_slave(self):
-        '''An attempt is made for the first time to connect to a slave.'''
+    def test_startup_with_no_subordinate(self):
+        '''An attempt is made for the first time to connect to a subordinate.'''
         self.pgbouncer_fixture.stop()
 
-        master_store = IMasterStore(Person)
-        slave_store = ISlaveStore(Person)
+        main_store = IMainStore(Person)
+        subordinate_store = ISubordinateStore(Person)
 
-        # The master and slave Stores are the same object.
-        self.assertIs(master_store, slave_store)
+        # The main and subordinate Stores are the same object.
+        self.assertIs(main_store, subordinate_store)
 
-    def test_slave_shutdown_during_transaction(self):
-        '''Slave is shutdown while running, but we can recover.'''
-        master_store = IMasterStore(Person)
-        slave_store = ISlaveStore(Person)
+    def test_subordinate_shutdown_during_transaction(self):
+        '''Subordinate is shutdown while running, but we can recover.'''
+        main_store = IMainStore(Person)
+        subordinate_store = ISubordinateStore(Person)
 
-        self.assertIsNot(master_store, slave_store)
+        self.assertIsNot(main_store, subordinate_store)
 
         self.pgbouncer_fixture.stop()
 
-        # The transaction fails if the slave store is used. Robust
+        # The transaction fails if the subordinate store is used. Robust
         # processes will handle this and retry (even if just means exit
         # and wait for the next scheduled invocation).
-        self.assertRaises(DisconnectionError, slave_store.get, Person, 1)
+        self.assertRaises(DisconnectionError, subordinate_store.get, Person, 1)
 
         transaction.abort()
 
-        # But in the next transaction, we get the master Store if we ask
-        # for the slave Store so we can continue.
-        master_store = IMasterStore(Person)
-        slave_store = ISlaveStore(Person)
+        # But in the next transaction, we get the main Store if we ask
+        # for the subordinate Store so we can continue.
+        main_store = IMainStore(Person)
+        subordinate_store = ISubordinateStore(Person)
 
-        self.assertIs(master_store, slave_store)
+        self.assertIs(main_store, subordinate_store)
 
-    def test_slave_shutdown_between_transactions(self):
-        '''Slave is shutdown in between transactions.'''
-        master_store = IMasterStore(Person)
-        slave_store = ISlaveStore(Person)
-        self.assertIsNot(master_store, slave_store)
+    def test_subordinate_shutdown_between_transactions(self):
+        '''Subordinate is shutdown in between transactions.'''
+        main_store = IMainStore(Person)
+        subordinate_store = ISubordinateStore(Person)
+        self.assertIsNot(main_store, subordinate_store)
 
         transaction.abort()
         self.pgbouncer_fixture.stop()
 
-        # The process doesn't notice the slave going down, and things
-        # will fail the next time the slave is used.
-        master_store = IMasterStore(Person)
-        slave_store = ISlaveStore(Person)
-        self.assertIsNot(master_store, slave_store)
-        self.assertRaises(DisconnectionError, slave_store.get, Person, 1)
+        # The process doesn't notice the subordinate going down, and things
+        # will fail the next time the subordinate is used.
+        main_store = IMainStore(Person)
+        subordinate_store = ISubordinateStore(Person)
+        self.assertIsNot(main_store, subordinate_store)
+        self.assertRaises(DisconnectionError, subordinate_store.get, Person, 1)
 
         # But now it has been discovered the socket is no longer
-        # connected to anything, next transaction we get a master
-        # Store when we ask for a slave.
-        master_store = IMasterStore(Person)
-        slave_store = ISlaveStore(Person)
-        self.assertIs(master_store, slave_store)
+        # connected to anything, next transaction we get a main
+        # Store when we ask for a subordinate.
+        main_store = IMainStore(Person)
+        subordinate_store = ISubordinateStore(Person)
+        self.assertIs(main_store, subordinate_store)
 
-    def test_slave_reconnect_after_outage(self):
-        '''The slave is again used once it becomes available.'''
+    def test_subordinate_reconnect_after_outage(self):
+        '''The subordinate is again used once it becomes available.'''
         self.pgbouncer_fixture.stop()
 
-        master_store = IMasterStore(Person)
-        slave_store = ISlaveStore(Person)
-        self.assertIs(master_store, slave_store)
+        main_store = IMainStore(Person)
+        subordinate_store = ISubordinateStore(Person)
+        self.assertIs(main_store, subordinate_store)
 
         self.pgbouncer_fixture.start()
         transaction.abort()
 
-        master_store = IMasterStore(Person)
-        slave_store = ISlaveStore(Person)
-        self.assertIsNot(master_store, slave_store)
+        main_store = IMainStore(Person)
+        subordinate_store = ISubordinateStore(Person)
+        self.assertIsNot(main_store, subordinate_store)
 
 
 class TestFastDowntimeRollout(TestCase):
@@ -360,21 +360,21 @@ class TestFastDowntimeRollout(TestCase):
     def setUp(self):
         super(TestFastDowntimeRollout, self).setUp()
 
-        self.master_dbname = DatabaseLayer._db_fixture.dbname
-        self.slave_dbname = self.master_dbname + '_slave'
+        self.main_dbname = DatabaseLayer._db_fixture.dbname
+        self.subordinate_dbname = self.main_dbname + '_subordinate'
 
         self.pgbouncer_fixture = PGBouncerFixture()
-        self.pgbouncer_fixture.databases[self.slave_dbname] = (
-            self.pgbouncer_fixture.databases[self.master_dbname])
+        self.pgbouncer_fixture.databases[self.subordinate_dbname] = (
+            self.pgbouncer_fixture.databases[self.main_dbname])
 
-        # Configure master and slave connections to go via different
+        # Configure main and subordinate connections to go via different
         # pgbouncer aliases.
-        config_key = 'master-slave-separation'
+        config_key = 'main-subordinate-separation'
         config.push(config_key, dedent('''\
             [database]
-            rw_main_master: dbname=%s host=localhost
-            rw_main_slave: dbname=%s host=localhost
-            ''' % (self.master_dbname, self.slave_dbname)))
+            rw_main_main: dbname=%s host=localhost
+            rw_main_subordinate: dbname=%s host=localhost
+            ''' % (self.main_dbname, self.subordinate_dbname)))
         self.addCleanup(lambda: config.pop(config_key))
 
         self.useFixture(self.pgbouncer_fixture)
@@ -393,11 +393,11 @@ class TestFastDowntimeRollout(TestCase):
         except DisconnectionError:
             return False
 
-    def store_is_slave(self, store):
-        return store.get_database().name == 'main-slave'
+    def store_is_subordinate(self, store):
+        return store.get_database().name == 'main-subordinate'
 
-    def store_is_master(self, store):
-        return not self.store_is_slave(store)
+    def store_is_main(self, store):
+        return not self.store_is_subordinate(store)
 
     def wait_until_connectable(self, dbname):
         timeout = 80
@@ -414,49 +414,49 @@ class TestFastDowntimeRollout(TestCase):
             time.sleep(0.2)
         self.fail("Unable to resume database %s" % dbname)
 
-    def test_slave_only_fast_downtime_rollout(self):
-        '''You can always access a working slave store during fast downtime.
+    def test_subordinate_only_fast_downtime_rollout(self):
+        '''You can always access a working subordinate store during fast downtime.
         '''
         # Everything is running happily.
-        store = ISlaveStore(Person)
+        store = ISubordinateStore(Person)
         original_store = store
         self.assertTrue(self.store_is_working(store))
-        self.assertTrue(self.store_is_slave(store))
+        self.assertTrue(self.store_is_subordinate(store))
 
         # But fast downtime is about to happen.
 
-        # Replication is stopped on the slave, and lag starts
+        # Replication is stopped on the subordinate, and lag starts
         # increasing.
 
-        # All connections to the master are killed so database schema
+        # All connections to the main are killed so database schema
         # updates can be applied.
-        self.pgbouncer_cur.execute('DISABLE %s' % self.master_dbname)
-        self.pgbouncer_cur.execute('KILL %s' % self.master_dbname)
+        self.pgbouncer_cur.execute('DISABLE %s' % self.main_dbname)
+        self.pgbouncer_cur.execute('KILL %s' % self.main_dbname)
 
-        # Of course, slave connections are unaffected.
+        # Of course, subordinate connections are unaffected.
         self.assertTrue(self.store_is_working(store))
 
-        # After schema updates have been made to the master, it is
+        # After schema updates have been made to the main, it is
         # reenabled.
-        self.pgbouncer_cur.execute('RESUME %s' % self.master_dbname)
-        self.pgbouncer_cur.execute('ENABLE %s' % self.master_dbname)
+        self.pgbouncer_cur.execute('RESUME %s' % self.main_dbname)
+        self.pgbouncer_cur.execute('ENABLE %s' % self.main_dbname)
 
-        # And the slaves taken down, and replication reenabled so the
+        # And the subordinates taken down, and replication reenabled so the
         # schema updates can replicate.
-        self.pgbouncer_cur.execute('DISABLE %s' % self.slave_dbname)
-        self.pgbouncer_cur.execute('KILL %s' % self.slave_dbname)
+        self.pgbouncer_cur.execute('DISABLE %s' % self.subordinate_dbname)
+        self.pgbouncer_cur.execute('KILL %s' % self.subordinate_dbname)
 
-        # The next attempt at accessing the slave store will fail
+        # The next attempt at accessing the subordinate store will fail
         # with a DisconnectionError.
         self.assertRaises(DisconnectionError, store.execute, 'SELECT TRUE')
         transaction.abort()
 
         # But if we handle that and retry, we can continue.
         # Now the failed connection has been detected, the next Store
-        # we are handed is a master Store instead of a slave.
-        store = ISlaveStore(Person)
-        self.assertTrue(self.store_is_master(store))
-        self.assertIsNot(ISlaveStore(Person), original_store)
+        # we are handed is a main Store instead of a subordinate.
+        store = ISubordinateStore(Person)
+        self.assertTrue(self.store_is_main(store))
+        self.assertIsNot(ISubordinateStore(Person), original_store)
 
         # But alas, it might not work the first transaction. If it has
         # been earlier, its connection was killed by pgbouncer earlier
@@ -464,10 +464,10 @@ class TestFastDowntimeRollout(TestCase):
         self.assertFalse(self.store_is_working(store))
         transaction.abort()
 
-        # Next retry attempt, everything is fine using the master
-        # connection, even though our code only asked for a slave.
-        store = ISlaveStore(Person)
-        self.assertTrue(self.store_is_master(store))
+        # Next retry attempt, everything is fine using the main
+        # connection, even though our code only asked for a subordinate.
+        store = ISubordinateStore(Person)
+        self.assertTrue(self.store_is_main(store))
         self.assertTrue(self.store_is_working(store))
 
         # The original Store is busted though. You cannot reuse Stores
@@ -476,85 +476,85 @@ class TestFastDowntimeRollout(TestCase):
         self.assertFalse(self.store_is_working(original_store))
         transaction.abort()
 
-        # Once replication has caught up, the slave is reenabled.
-        self.pgbouncer_cur.execute('RESUME %s' % self.slave_dbname)
-        self.pgbouncer_cur.execute('ENABLE %s' % self.slave_dbname)
+        # Once replication has caught up, the subordinate is reenabled.
+        self.pgbouncer_cur.execute('RESUME %s' % self.subordinate_dbname)
+        self.pgbouncer_cur.execute('ENABLE %s' % self.subordinate_dbname)
 
         # And next transaction, we are back to normal.
-        store = ISlaveStore(Person)
+        store = ISubordinateStore(Person)
         self.assertTrue(self.store_is_working(store))
-        self.assertTrue(self.store_is_slave(store))
+        self.assertTrue(self.store_is_subordinate(store))
         self.assertIs(original_store, store)
 
-    def test_master_slave_fast_downtime_rollout(self):
+    def test_main_subordinate_fast_downtime_rollout(self):
         '''Parts of your app can keep working during a fast downtime update.
         '''
         # Everything is running happily.
-        master_store = IMasterStore(Person)
-        self.assertTrue(self.store_is_master(master_store))
-        self.assertTrue(self.store_is_working(master_store))
+        main_store = IMainStore(Person)
+        self.assertTrue(self.store_is_main(main_store))
+        self.assertTrue(self.store_is_working(main_store))
 
-        slave_store = ISlaveStore(Person)
-        self.assertTrue(self.store_is_slave(slave_store))
-        self.assertTrue(self.store_is_working(slave_store))
+        subordinate_store = ISubordinateStore(Person)
+        self.assertTrue(self.store_is_subordinate(subordinate_store))
+        self.assertTrue(self.store_is_working(subordinate_store))
 
         # But fast downtime is about to happen.
 
-        # Replication is stopped on the slave, and lag starts
+        # Replication is stopped on the subordinate, and lag starts
         # increasing.
 
-        # All connections to the master are killed so database schema
+        # All connections to the main are killed so database schema
         # updates can be applied.
-        self.pgbouncer_cur.execute('DISABLE %s' % self.master_dbname)
-        self.pgbouncer_cur.execute('KILL %s' % self.master_dbname)
+        self.pgbouncer_cur.execute('DISABLE %s' % self.main_dbname)
+        self.pgbouncer_cur.execute('KILL %s' % self.main_dbname)
 
-        # Of course, slave connections are unaffected.
-        self.assertTrue(self.store_is_working(slave_store))
+        # Of course, subordinate connections are unaffected.
+        self.assertTrue(self.store_is_working(subordinate_store))
 
-        # But attempts to use a master store will fail.
-        self.assertFalse(self.store_is_working(master_store))
+        # But attempts to use a main store will fail.
+        self.assertFalse(self.store_is_working(main_store))
         transaction.abort()
 
-        # After schema updates have been made to the master, it is
+        # After schema updates have been made to the main, it is
         # reenabled.
-        self.pgbouncer_cur.execute('RESUME %s' % self.master_dbname)
-        self.pgbouncer_cur.execute('ENABLE %s' % self.master_dbname)
+        self.pgbouncer_cur.execute('RESUME %s' % self.main_dbname)
+        self.pgbouncer_cur.execute('ENABLE %s' % self.main_dbname)
 
-        # And the slaves taken down, and replication reenabled so the
+        # And the subordinates taken down, and replication reenabled so the
         # schema updates can replicate.
-        self.pgbouncer_cur.execute('DISABLE %s' % self.slave_dbname)
-        self.pgbouncer_cur.execute('KILL %s' % self.slave_dbname)
+        self.pgbouncer_cur.execute('DISABLE %s' % self.subordinate_dbname)
+        self.pgbouncer_cur.execute('KILL %s' % self.subordinate_dbname)
 
-        # The master store is working again.
-        master_store = IMasterStore(Person)
-        self.assertTrue(self.store_is_master(master_store))
-        self.assertTrue(self.store_is_working(master_store))
+        # The main store is working again.
+        main_store = IMainStore(Person)
+        self.assertTrue(self.store_is_main(main_store))
+        self.assertTrue(self.store_is_working(main_store))
 
-        # The next attempt at accessing the slave store will fail
+        # The next attempt at accessing the subordinate store will fail
         # with a DisconnectionError.
-        slave_store = ISlaveStore(Person)
-        self.assertTrue(self.store_is_slave(slave_store))
+        subordinate_store = ISubordinateStore(Person)
+        self.assertTrue(self.store_is_subordinate(subordinate_store))
         self.assertRaises(
-            DisconnectionError, slave_store.execute, 'SELECT TRUE')
+            DisconnectionError, subordinate_store.execute, 'SELECT TRUE')
         transaction.abort()
 
         # But if we handle that and retry, we can continue.
         # Now the failed connection has been detected, the next Store
-        # we are handed is a master Store instead of a slave.
-        slave_store = ISlaveStore(Person)
-        self.assertTrue(self.store_is_master(slave_store))
-        self.assertTrue(self.store_is_working(slave_store))
+        # we are handed is a main Store instead of a subordinate.
+        subordinate_store = ISubordinateStore(Person)
+        self.assertTrue(self.store_is_main(subordinate_store))
+        self.assertTrue(self.store_is_working(subordinate_store))
 
-        # Once replication has caught up, the slave is reenabled.
-        self.pgbouncer_cur.execute('RESUME %s' % self.slave_dbname)
-        self.pgbouncer_cur.execute('ENABLE %s' % self.slave_dbname)
+        # Once replication has caught up, the subordinate is reenabled.
+        self.pgbouncer_cur.execute('RESUME %s' % self.subordinate_dbname)
+        self.pgbouncer_cur.execute('ENABLE %s' % self.subordinate_dbname)
 
         # And next transaction, we are back to normal.
         transaction.abort()
-        master_store = IMasterStore(Person)
-        self.assertTrue(self.store_is_master(master_store))
-        self.assertTrue(self.store_is_working(master_store))
+        main_store = IMainStore(Person)
+        self.assertTrue(self.store_is_main(main_store))
+        self.assertTrue(self.store_is_working(main_store))
 
-        slave_store = ISlaveStore(Person)
-        self.assertTrue(self.store_is_slave(slave_store))
-        self.assertTrue(self.store_is_working(slave_store))
+        subordinate_store = ISubordinateStore(Person)
+        self.assertTrue(self.store_is_subordinate(subordinate_store))
+        self.assertTrue(self.store_is_working(subordinate_store))

@@ -21,7 +21,7 @@ from zope.interface import (
     Interface,
     )
 
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IMainStore
 import lp.services.scripts
 
 
@@ -282,9 +282,9 @@ class DBLoopTuner(LoopTuner):
 
     def _blockWhenLagged(self):
         """When database replication lag is high, block until it drops."""
-        # Lag is most meaningful on the master.
+        # Lag is most meaningful on the main.
         from lp.services.librarian.model import LibraryFileAlias
-        store = IMasterStore(LibraryFileAlias)
+        store = IMainStore(LibraryFileAlias)
         msg_counter = 0
         while not self._isTimedOut():
             lag = store.execute("SELECT replication_lag()").get_one()[0]
@@ -308,7 +308,7 @@ class DBLoopTuner(LoopTuner):
         if self.long_running_transaction is None:
             return
         from lp.services.librarian.model import LibraryFileAlias
-        store = IMasterStore(LibraryFileAlias)
+        store = IMainStore(LibraryFileAlias)
         msg_counter = 0
         while not self._isTimedOut():
             results = list(store.execute("""

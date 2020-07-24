@@ -6,7 +6,7 @@
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.webapp.publisher import canonical_url
 from lp.soyuz.enums import (

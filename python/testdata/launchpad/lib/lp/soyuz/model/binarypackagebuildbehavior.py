@@ -12,11 +12,11 @@ __all__ = [
 from twisted.internet import defer
 from zope.interface import implements
 
-from lp.buildmaster.interfaces.builder import CannotBuild
-from lp.buildmaster.interfaces.buildfarmjobbehavior import (
+from lp.buildmain.interfaces.builder import CannotBuild
+from lp.buildmain.interfaces.buildfarmjobbehavior import (
     IBuildFarmJobBehavior,
     )
-from lp.buildmaster.model.buildfarmjobbehavior import BuildFarmJobBehaviorBase
+from lp.buildmain.model.buildfarmjobbehavior import BuildFarmJobBehaviorBase
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.webapp import urlappend
 from lp.soyuz.adapters.archivedependencies import (
@@ -62,32 +62,32 @@ class BinaryPackageBuildBehavior(BuildFarmJobBehaviorBase):
 
     def _buildFilemapStructure(self, ignored, logger):
         # Build filemap structure with the files required in this build
-        # and send them to the slave.
-        # If the build is private we tell the slave to get the files from the
-        # archive instead of the librarian because the slaves cannot
+        # and send them to the subordinate.
+        # If the build is private we tell the subordinate to get the files from the
+        # archive instead of the librarian because the subordinates cannot
         # access the restricted librarian.
         dl = []
         private = self.build.archive.private
         if private:
-            dl.extend(self._cachePrivateSourceOnSlave(logger))
+            dl.extend(self._cachePrivateSourceOnSubordinate(logger))
         filemap = {}
         for source_file in self.build.source_package_release.files:
             lfa = source_file.libraryfile
             filemap[lfa.filename] = lfa.content.sha1
             if not private:
                 dl.append(
-                    self._slave.cacheFile(
+                    self._subordinate.cacheFile(
                         logger, source_file.libraryfile))
         d = defer.gatherResults(dl)
         return d.addCallback(lambda ignored: filemap)
 
-    def dispatchBuildToSlave(self, build_queue_id, logger):
+    def dispatchBuildToSubordinate(self, build_queue_id, logger):
         """See `IBuildFarmJobBehavior`."""
 
-        # Start the binary package build on the slave builder. First
+        # Start the binary package build on the subordinate builder. First
         # we send the chroot.
         chroot = self.build.distro_arch_series.getChroot()
-        d = self._slave.cacheFile(logger, chroot)
+        d = self._subordinate.cacheFile(logger, chroot)
         d.addCallback(self._buildFilemapStructure, logger)
 
         def got_filemap(filemap):
@@ -101,7 +101,7 @@ class BinaryPackageBuildBehavior(BuildFarmJobBehaviorBase):
                 "Initiating build %s on %s" % (buildid, self._builder.url))
 
             args = self._extraBuildArgs(self.build)
-            d = self._slave.build(
+            d = self._subordinate.build(
                 cookie, "binarypackage", chroot_sha1, filemap, args)
 
             def got_build((status, info)):
@@ -168,7 +168,7 @@ class BinaryPackageBuildBehavior(BuildFarmJobBehaviorBase):
                     (build.title, build.id, build.pocket.name,
                      build.distro_series.name))
 
-    def updateSlaveStatus(self, raw_slave_status, status):
+    def updateSubordinateStatus(self, raw_subordinate_status, status):
         """Parse the binary build specific status info into the status dict.
 
         This includes:
@@ -182,11 +182,11 @@ class BinaryPackageBuildBehavior(BuildFarmJobBehaviorBase):
             )
         if (status['builder_status'] == 'BuilderStatus.WAITING' and
             status['build_status'] in build_status_with_files):
-            status['filemap'] = raw_slave_status[3]
-            status['dependencies'] = raw_slave_status[4]
+            status['filemap'] = raw_subordinate_status[3]
+            status['dependencies'] = raw_subordinate_status[4]
 
-    def _cachePrivateSourceOnSlave(self, logger):
-        """Ask the slave to download source files for a private build.
+    def _cachePrivateSourceOnSubordinate(self, logger):
+        """Ask the subordinate to download source files for a private build.
 
         :param logger: A logger used for providing debug information.
         :return: A list of Deferreds, each of which represents a request
@@ -214,13 +214,13 @@ class BinaryPackageBuildBehavior(BuildFarmJobBehaviorBase):
                          "(%s, %s)" % (
                             self._builder.url, file_name, url, sha1))
             dl.append(
-                self._slave.sendFileToSlave(
+                self._subordinate.sendFileToSubordinate(
                     sha1, url, "buildd", archive.buildd_secret))
         return dl
 
     def _extraBuildArgs(self, build):
         """
-        Return the extra arguments required by the slave for the given build.
+        Return the extra arguments required by the subordinate for the given build.
         """
         # Build extra arguments.
         args = {}

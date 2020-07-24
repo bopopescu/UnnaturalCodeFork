@@ -1,7 +1,7 @@
 # Copyright 2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 #
-# Derived from make_master.py by Oran Looney.
+# Derived from make_main.py by Oran Looney.
 # http://oranlooney.com/make-css-sprites-python-image-library/
 
 """Library to create sprites."""

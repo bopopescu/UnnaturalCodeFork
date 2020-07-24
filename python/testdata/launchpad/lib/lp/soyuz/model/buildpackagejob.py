@@ -15,8 +15,8 @@ from storm.locals import (
 from zope.component import getUtility
 from zope.interface import implements
 
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.model.buildfarmjob import BuildFarmJobOld
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.model.buildfarmjob import BuildFarmJobOld
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.bulk import load_related

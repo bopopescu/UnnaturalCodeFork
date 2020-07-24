@@ -273,12 +273,12 @@ class TestMilestoneDeleteView(TestCaseWithFactory):
     def test_delete_conjoined_bugtask(self):
         product = self.factory.makeProduct()
         bug = self.factory.makeBug(target=product)
-        master_bugtask = getUtility(IBugTaskSet).createTask(
+        main_bugtask = getUtility(IBugTaskSet).createTask(
             bug, product.owner, product.development_focus)
         milestone = self.factory.makeMilestone(
             productseries=product.development_focus)
         login_person(product.owner)
-        master_bugtask.transitionToMilestone(milestone, product.owner)
+        main_bugtask.transitionToMilestone(milestone, product.owner)
         form = {
             'field.actions.delete': 'Delete Milestone',
             }

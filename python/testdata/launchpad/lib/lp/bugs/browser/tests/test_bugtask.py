@@ -502,7 +502,7 @@ class TestBugTasksNominationsView(TestCaseWithFactory):
         self.useFixture(FeatureFixture(
             {'bugs.affected_count_includes_dupes.disabled': ''}))
         self.makeDuplicate()
-        # Now with you affected by the duplicate, but not the master.
+        # Now with you affected by the duplicate, but not the main.
         self.bug2.markUserAffected(self.view.user, True)
         self.refresh()
         self.assertEqual(
@@ -512,11 +512,11 @@ class TestBugTasksNominationsView(TestCaseWithFactory):
             "This bug affects 4 people", self.view.anon_affected_statement)
         self.assertEqual(self.view.other_users_affected_count, 3)
 
-    def test_counts_affected_by_master(self):
+    def test_counts_affected_by_main(self):
         self.useFixture(FeatureFixture(
             {'bugs.affected_count_includes_dupes.disabled': ''}))
         self.makeDuplicate()
-        # And now with you also affected by the master.
+        # And now with you also affected by the main.
         self.bug.markUserAffected(self.view.user, True)
         self.refresh()
         self.assertEqual(
@@ -526,7 +526,7 @@ class TestBugTasksNominationsView(TestCaseWithFactory):
             "This bug affects 4 people", self.view.anon_affected_statement)
         self.assertEqual(self.view.other_users_affected_count, 3)
 
-    def test_counts_affected_by_duplicate_not_by_master(self):
+    def test_counts_affected_by_duplicate_not_by_main(self):
         self.useFixture(FeatureFixture(
             {'bugs.affected_count_includes_dupes.disabled': ''}))
         self.makeDuplicate()
@@ -539,7 +539,7 @@ class TestBugTasksNominationsView(TestCaseWithFactory):
             self.view.affected_statement)
         # It would be reasonable for Anon to see this bug cluster affecting
         # either 3 or 4 people.  However at the moment the "No" answer on the
-        # master is more authoritative than the "Yes" on the dupe.
+        # main is more authoritative than the "Yes" on the dupe.
         self.assertEqual(
             "This bug affects 3 people", self.view.anon_affected_statement)
         self.assertEqual(self.view.other_users_affected_count, 3)

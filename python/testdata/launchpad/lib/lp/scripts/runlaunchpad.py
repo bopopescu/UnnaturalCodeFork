@@ -371,7 +371,7 @@ def start_testapp(argv=list(sys.argv)):
         # that the configuration of utilities may become invalidated.
         # XXX Robert Collins, bug=883980: In short, we should derive the
         # other services from the test runner, rather than duplicating
-        # the work of test setup within the slave appserver. That will
+        # the work of test setup within the subordinate appserver. That will
         # permit reuse of the librarian, DB, rabbit etc, and
         # correspondingly easier assertions and inspection of interactions
         # with other services. That would mean we do not need to set up rabbit
@@ -441,7 +441,7 @@ def start_launchpad(argv=list(sys.argv), setup=None):
             else:
                 # We just need the foreground process to sit around forever
                 # waiting for the signal to shut everything down.  Normally,
-                # Zope itself would be this master process, but we're not
+                # Zope itself would be this main process, but we're not
                 # starting that up, so we need to do something else.
                 try:
                     signal.pause()

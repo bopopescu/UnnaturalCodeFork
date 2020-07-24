@@ -232,7 +232,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
 
     def testSendsStackedInfo(self):
         # When the puller worker stacks a branch, it reports the stacked on
-        # URL to the master.
+        # URL to the main.
         base_branch = self.make_branch('base_branch', format='1.9')
         stacked_branch = self.make_branch('stacked-branch', format='1.9')
         protocol_output = StringIO()
@@ -247,7 +247,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
 
     def testDoesntSendStackedInfoUnstackableFormat(self):
         # Mirroring an unstackable branch sends '' as the stacked-on location
-        # to the master.
+        # to the main.
         source_branch = self.make_branch('source-branch', format='pack-0.92')
         protocol_output = StringIO()
         to_mirror = self.makePullerWorker(
@@ -260,7 +260,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
 
     def testDoesntSendStackedInfoNotStacked(self):
         # Mirroring a non-stacked branch sends '' as the stacked-on location
-        # to the master.
+        # to the main.
         source_branch = self.make_branch('source-branch', format='1.9')
         protocol_output = StringIO()
         to_mirror = self.makePullerWorker(
@@ -424,7 +424,7 @@ class TestMirroredBranchPolicy(TestCase):
 
 class TestWorkerProtocol(TestCaseInTempDir, PullerWorkerMixin):
     """Tests for the client-side implementation of the protocol used to
-    communicate to the master process.
+    communicate to the main process.
     """
 
     def setUp(self):

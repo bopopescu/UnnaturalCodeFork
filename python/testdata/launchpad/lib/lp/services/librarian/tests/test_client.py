@@ -14,8 +14,8 @@ from urllib2 import (
 import transaction
 
 from lp.services.config import config
-from lp.services.database.interfaces import ISlaveStore
-from lp.services.database.policy import SlaveDatabasePolicy
+from lp.services.database.interfaces import ISubordinateStore
+from lp.services.database.policy import SubordinateDatabasePolicy
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.services.librarian import client as client_module
 from lp.services.librarian.client import (
@@ -118,14 +118,14 @@ class LibrarianClientTestCase(unittest.TestCase):
         else:
             self.fail("UploadFailed not raised")
 
-    def test_addFile_uses_master(self):
+    def test_addFile_uses_main(self):
         # addFile is a write operation, so it should always use the
-        # master store, even if the slave is the default. Close the
-        # slave store and try to add a file, verifying that the master
+        # main store, even if the subordinate is the default. Close the
+        # subordinate store and try to add a file, verifying that the main
         # is used.
         client = LibrarianClient()
-        ISlaveStore(LibraryFileAlias).close()
-        with SlaveDatabasePolicy():
+        ISubordinateStore(LibraryFileAlias).close()
+        with SubordinateDatabasePolicy():
             alias_id = client.addFile(
                 'sample.txt', 6, StringIO('sample'), 'text/plain')
         transaction.commit()

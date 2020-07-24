@@ -143,7 +143,7 @@ class TableReplicationInfo:
     """Internal table replication details."""
     table_id = None
     replication_set_id = None
-    master_node_id = None
+    main_node_id = None
 
     def __init__(self, con, namespace, table_name):
         cur = con.cursor()
@@ -159,7 +159,7 @@ class TableReplicationInfo:
         row = cur.fetchone()
         if row is None:
             raise LookupError(fqn(namespace, table_name))
-        self.table_id, self.replication_set_id, self.master_node_id = row
+        self.table_id, self.replication_set_id, self.main_node_id = row
 
 
 def sync(timeout, exit_on_fail=True):
@@ -205,10 +205,10 @@ def execute_slonik(script, sync=None, exit_on_fail=True, auto_preamble=True):
 
     if sync is not None:
         sync_script = dedent("""\
-            sync (id = @master_node);
+            sync (id = @main_node);
             wait for event (
-                origin = @master_node, confirmed = ALL,
-                wait on = @master_node, timeout = %d);
+                origin = @main_node, confirmed = ALL,
+                wait on = @main_node, timeout = %d);
             """ % sync)
         script = script + sync_script
 
@@ -234,11 +234,11 @@ def execute_slonik(script, sync=None, exit_on_fail=True, auto_preamble=True):
 
 class Node:
     """Simple data structure for holding information about a Slony node."""
-    def __init__(self, node_id, nickname, connection_string, is_master):
+    def __init__(self, node_id, nickname, connection_string, is_main):
         self.node_id = node_id
         self.nickname = nickname
         self.connection_string = connection_string
-        self.is_master = is_master
+        self.is_main = is_main
 
     def connect(self, isolation=ISOLATION_LEVEL_DEFAULT):
         con = psycopg2.connect(str(self.connection_string))
@@ -253,17 +253,17 @@ def _get_nodes(con, query):
     cur = con.cursor()
     cur.execute(query)
     nodes = []
-    for node_id, nickname, connection_string, is_master in cur.fetchall():
-        nodes.append(Node(node_id, nickname, connection_string, is_master))
+    for node_id, nickname, connection_string, is_main in cur.fetchall():
+        nodes.append(Node(node_id, nickname, connection_string, is_main))
     return nodes
 
 
-def get_master_node(con, set_id=1):
-    """Return the master Node, or None if the cluster is still being setup."""
+def get_main_node(con, set_id=1):
+    """Return the main Node, or None if the cluster is still being setup."""
     nodes = _get_nodes(con, """
         SELECT DISTINCT
             set_origin AS node_id,
-            'master',
+            'main',
             pa_conninfo AS connection_string,
             True
         FROM _sl.sl_set
@@ -272,16 +272,16 @@ def get_master_node(con, set_id=1):
         """ % set_id)
     if not nodes:
         return None
-    assert len(nodes) == 1, "More than one master found for set %s" % set_id
+    assert len(nodes) == 1, "More than one main found for set %s" % set_id
     return nodes[0]
 
 
-def get_slave_nodes(con, set_id=1):
-    """Return the list of slave Nodes."""
+def get_subordinate_nodes(con, set_id=1):
+    """Return the list of subordinate Nodes."""
     return _get_nodes(con, """
         SELECT DISTINCT
             pa_server AS node_id,
-            'slave' || pa_server,
+            'subordinate' || pa_server,
             pa_conninfo AS connection_string,
             False
         FROM _sl.sl_set
@@ -295,17 +295,17 @@ def get_slave_nodes(con, set_id=1):
 
 def get_nodes(con, set_id=1):
     """Return a list of all Nodes."""
-    master_node = get_master_node(con, set_id)
-    if master_node is None:
+    main_node = get_main_node(con, set_id)
+    if main_node is None:
         return []
     else:
-        return [master_node] + get_slave_nodes(con, set_id)
+        return [main_node] + get_subordinate_nodes(con, set_id)
 
 
 def get_all_cluster_nodes(con):
     """Return a list of all Nodes in the cluster.
 
-    node.is_master will be None, as this boolean doesn't make sense
+    node.is_main will be None, as this boolean doesn't make sense
     in the context of a cluster rather than a single replication set.
     """
     if not slony_installed(con):
@@ -321,20 +321,20 @@ def get_all_cluster_nodes(con):
         """)
     if not nodes:
         # There are no subscriptions yet, so no paths. Generate the
-        # master Node.
+        # main Node.
         cur = con.cursor()
         cur.execute("SELECT no_id from _sl.sl_node")
         node_ids = [row[0] for row in cur.fetchall()]
         if len(node_ids) == 0:
             return []
         assert len(node_ids) == 1, "Multiple nodes but no paths."
-        master_node_id = node_ids[0]
-        master_connection_string = ConnectionString(
-            config.database.rw_main_master)
-        master_connection_string.user = 'slony'
+        main_node_id = node_ids[0]
+        main_connection_string = ConnectionString(
+            config.database.rw_main_main)
+        main_connection_string.user = 'slony'
         return [Node(
-            master_node_id, 'node%d_node' % master_node_id,
-            master_connection_string, True)]
+            main_node_id, 'node%d_node' % main_node_id,
+            main_connection_string, True)]
     return nodes
 
 
@@ -344,10 +344,10 @@ def preamble(con=None):
     if con is None:
         con = connect(user='slony')
 
-    master_node = get_master_node(con)
+    main_node = get_main_node(con)
     nodes = get_all_cluster_nodes(con)
-    if master_node is None and len(nodes) == 1:
-        master_node = nodes[0]
+    if main_node is None and len(nodes) == 1:
+        main_node = nodes[0]
 
     preamble = [dedent("""\
         #
@@ -363,12 +363,12 @@ def preamble(con=None):
         define lpmirror_set %d;
         """ % (LPMAIN_SET_ID, HOLDING_SET_ID, SSO_SET_ID, LPMIRROR_SET_ID))]
 
-    if master_node is not None:
+    if main_node is not None:
         preamble.append(dedent("""\
-        # Symbolic id for the main replication set master node.
-        define master_node %d;
-        define master_node_conninfo '%s';
-        """ % (master_node.node_id, master_node.connection_string)))
+        # Symbolic id for the main replication set main node.
+        define main_node %d;
+        define main_node_conninfo '%s';
+        """ % (main_node.node_id, main_node.connection_string)))
 
     for node in nodes:
         preamble.append(dedent("""\

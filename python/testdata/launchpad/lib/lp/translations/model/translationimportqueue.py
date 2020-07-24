@@ -61,8 +61,8 @@ from lp.services.database.constants import (
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
-    IMasterStore,
-    ISlaveStore,
+    IMainStore,
+    ISubordinateStore,
     IStore,
     )
 from lp.services.database.sqlbase import (
@@ -989,7 +989,7 @@ class TranslationImportQueue:
             clauses.append(
                 TranslationImportQueueEntry.productseries_id ==
                 productseries.id)
-        store = IMasterStore(TranslationImportQueueEntry)
+        store = IMainStore(TranslationImportQueueEntry)
         entries = store.find(
             TranslationImportQueueEntry, *clauses)
         entries = list(
@@ -1357,13 +1357,13 @@ class TranslationImportQueue:
 
         return approved_entries
 
-    def _getSlaveStore(self):
-        """Return the slave store for the import queue.
+    def _getSubordinateStore(self):
+        """Return the subordinate store for the import queue.
 
         Tests can override this to avoid unnecessary synchronization
         issues.
         """
-        return ISlaveStore(TranslationImportQueueEntry)
+        return ISubordinateStore(TranslationImportQueueEntry)
 
     def _getBlockableDirectories(self):
         """Describe all directories where uploads are to be blocked.
@@ -1387,7 +1387,7 @@ class TranslationImportQueue:
             "path LIKE ('%%' || %s)" % quote_like(suffix)
             for suffix in importer.template_suffixes])
 
-        store = self._getSlaveStore()
+        store = self._getSubordinateStore()
         result = store.execute("""
             SELECT
                 distroseries,
@@ -1517,7 +1517,7 @@ class TranslationImportQueue:
 
     def cleanUpQueue(self):
         """See `ITranslationImportQueue`."""
-        store = IMasterStore(TranslationImportQueueEntry)
+        store = IMainStore(TranslationImportQueueEntry)
 
         return (
             self._cleanUpObsoleteEntries(store) +

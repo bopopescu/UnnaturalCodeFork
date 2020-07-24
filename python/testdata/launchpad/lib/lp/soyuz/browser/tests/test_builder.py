@@ -8,8 +8,8 @@ __metaclass__ = type
 from testtools.matchers import Equals
 from zope.component import getUtility
 
-from lp.buildmaster.interfaces.builder import IBuilderSet
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmain.interfaces.builder import IBuilderSet
+from lp.buildmain.model.buildqueue import BuildQueue
 from lp.services.database.interfaces import IStore
 from lp.services.job.model.job import Job
 from lp.soyuz.browser.tests.test_builder_views import BuildCreationMixin

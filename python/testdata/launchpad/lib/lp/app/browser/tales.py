@@ -59,7 +59,7 @@ from lp.app.interfaces.launchpad import (
 from lp.blueprints.interfaces.specification import ISpecification
 from lp.blueprints.interfaces.sprint import ISprint
 from lp.bugs.interfaces.bug import IBug
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.code.interfaces.branch import IBranch
 from lp.layers import LaunchpadLayer
 from lp.registry.interfaces.distribution import IDistribution
@@ -2561,7 +2561,7 @@ class PageMacroDispatcher:
         if pagetype not in self._pagetypes:
             raise TraversalError('unknown pagetype: %s' % pagetype)
         self.context.__pagetype__ = pagetype
-        return self.base.macros['master']
+        return self.base.macros['main']
 
     def haspage(self, layoutelement):
         pagetype = getattr(self.context, '__pagetype__', None)

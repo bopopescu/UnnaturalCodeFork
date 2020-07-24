@@ -23,9 +23,9 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.buildqueue import IBuildQueue
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interfaces.buildqueue import IBuildQueue
+from lp.buildmain.model.buildqueue import BuildQueue
 from lp.code.errors import (
     BuildAlreadyPending,
     PrivateBranchRecipe,

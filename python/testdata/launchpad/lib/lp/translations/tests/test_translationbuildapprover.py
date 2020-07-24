@@ -35,9 +35,9 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
                 productseries=series))
             for path in filenames]
 
-    def _becomeBuilddMaster(self):
+    def _becomeBuilddMain(self):
         """Switch db identity to the script that uses this approver."""
-        switch_dbuser(config.builddmaster.dbuser)
+        switch_dbuser(config.builddmain.dbuser)
 
     def test_approve_all_new(self):
         # A happy approval case, all new templates.
@@ -48,7 +48,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
             ]
         series = self.factory.makeProductSeries()
 
-        self._becomeBuilddMaster()
+        self._becomeBuilddMain()
         approver = TranslationBuildApprover(filenames, productseries=series)
         entries = self._makeApprovedEntries(series, approver, filenames)
 
@@ -67,7 +67,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
             ]
         series = self.factory.makeProductSeries()
 
-        self._becomeBuilddMaster()
+        self._becomeBuilddMain()
         approver = TranslationBuildApprover(filenames, productseries=series)
         entries = self._makeApprovedEntries(series, approver, filenames)
 
@@ -90,7 +90,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
         domain3_pot = self.factory.makePOTemplate(
             productseries=series, name='domain3')
 
-        self._becomeBuilddMaster()
+        self._becomeBuilddMain()
         approver = TranslationBuildApprover(filenames, productseries=series)
         entries = self._makeApprovedEntries(series, approver, filenames)
 
@@ -115,7 +115,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
         domain2_pot = self.factory.makePOTemplate(
             productseries=series, name='domain2')
 
-        self._becomeBuilddMaster()
+        self._becomeBuilddMain()
         approver = TranslationBuildApprover(filenames, productseries=series)
         entries = self._makeApprovedEntries(series, approver, filenames)
 
@@ -135,7 +135,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
         series = self.factory.makeProductSeries()
         domain1_pot = self.factory.makePOTemplate(
             productseries=series, name='domain1', iscurrent=False)
-        self._becomeBuilddMaster()
+        self._becomeBuilddMain()
         approver = TranslationBuildApprover(filenames, productseries=series)
         entries = self._makeApprovedEntries(series, approver, filenames)
         self.assertEqual(
@@ -152,7 +152,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
         product = self.factory.makeProduct(name='fooproduct')
         series = product.getSeries('trunk')
 
-        self._becomeBuilddMaster()
+        self._becomeBuilddMain()
         approver = TranslationBuildApprover(filenames, productseries=series)
         entries = self._makeApprovedEntries(series, approver, filenames)
 
@@ -167,7 +167,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
         series = self.factory.makeProductSeries()
         pot = self.factory.makePOTemplate(productseries=series)
 
-        self._becomeBuilddMaster()
+        self._becomeBuilddMain()
         approver = TranslationBuildApprover(filenames, productseries=series)
         entries = self._makeApprovedEntries(series, approver, filenames)
 
@@ -182,7 +182,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
             ]
         series = self.factory.makeProductSeries()
 
-        self._becomeBuilddMaster()
+        self._becomeBuilddMain()
         approver = TranslationBuildApprover(filenames, productseries=series)
         entries = self._makeApprovedEntries(series, approver, filenames)
 
@@ -200,7 +200,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
         self.factory.makePOTemplate(productseries=series)
         self.factory.makePOTemplate(productseries=series)
 
-        self._becomeBuilddMaster()
+        self._becomeBuilddMain()
         approver = TranslationBuildApprover(filenames, productseries=series)
         entries = self._makeApprovedEntries(series, approver, filenames)
 
@@ -214,7 +214,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
             ]
         series = self.factory.makeProductSeries()
 
-        self._becomeBuilddMaster()
+        self._becomeBuilddMain()
         approver = TranslationBuildApprover(filenames, productseries=series)
         entries = self._makeApprovedEntries(
             series, approver, filenames + ['po-domain3/domain3.pot'])
@@ -238,7 +238,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
         domain2_pot = self.factory.makePOTemplate(
             productseries=series, name='name2', path=filenames[1])
 
-        self._becomeBuilddMaster()
+        self._becomeBuilddMain()
         approver = TranslationBuildApprover(filenames, productseries=series)
         entries = self._makeApprovedEntries(series, approver, filenames)
 
@@ -259,7 +259,7 @@ class TestTranslationBuildApprover(TestCaseWithFactory):
         domain1_pot = self.factory.makePOTemplate(
             productseries=series, name='domain1', path='po/foo.pot')
 
-        self._becomeBuilddMaster()
+        self._becomeBuilddMain()
         approver = TranslationBuildApprover(filenames, productseries=series)
         entries = self._makeApprovedEntries(series, approver, filenames)
 

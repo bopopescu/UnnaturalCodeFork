@@ -1826,10 +1826,10 @@ class TestConjoinedBugTasks(TestCaseWithFactory):
         return BugData(owner, distro, distro_release, source_package, bug,
                        generic_task, series_task)
 
-    def test_editing_generic_status_reflects_upon_conjoined_master(self):
-        # If a change is made to the status of a conjoined slave
+    def test_editing_generic_status_reflects_upon_conjoined_main(self):
+        # If a change is made to the status of a conjoined subordinate
         # (generic) task, that change is reflected upon the conjoined
-        # master.
+        # main.
         data = self._setupBugData()
         with person_logged_in(data.owner):
             # Both the generic task and the series task start off with the
@@ -1845,10 +1845,10 @@ class TestConjoinedBugTasks(TestCaseWithFactory):
             self.assertEqual(BugTaskStatus.CONFIRMED,
                              data.series_task.status)
 
-    def test_editing_generic_importance_reflects_upon_conjoined_master(self):
-        # If a change is made to the importance of a conjoined slave
+    def test_editing_generic_importance_reflects_upon_conjoined_main(self):
+        # If a change is made to the importance of a conjoined subordinate
         # (generic) task, that change is reflected upon the conjoined
-        # master.
+        # main.
         data = self._setupBugData()
         with person_logged_in(data.owner):
             data.generic_task.transitionToImportance(BugTaskImportance.HIGH,
@@ -1856,19 +1856,19 @@ class TestConjoinedBugTasks(TestCaseWithFactory):
             self.assertEqual(BugTaskImportance.HIGH,
                              data.series_task.importance)
 
-    def test_editing_generic_assignee_reflects_upon_conjoined_master(self):
-        # If a change is made to the assignee of a conjoined slave
+    def test_editing_generic_assignee_reflects_upon_conjoined_main(self):
+        # If a change is made to the assignee of a conjoined subordinate
         # (generic) task, that change is reflected upon the conjoined
-        # master.
+        # main.
         data = self._setupBugData()
         with person_logged_in(data.owner):
             data.generic_task.transitionToAssignee(data.owner)
             self.assertEqual(data.owner, data.series_task.assignee)
 
-    def test_editing_generic_package_reflects_upon_conjoined_master(self):
-        # If a change is made to the source package of a conjoined slave
+    def test_editing_generic_package_reflects_upon_conjoined_main(self):
+        # If a change is made to the source package of a conjoined subordinate
         # (generic) task, that change is reflected upon the conjoined
-        # master.
+        # main.
         data = self._setupBugData()
         source_package_name = self.factory.makeSourcePackageName("ham")
         self.factory.makeSourcePackagePublishingHistory(
@@ -1918,7 +1918,7 @@ class TestConjoinedBugTasks(TestCaseWithFactory):
         self.assertEqual(con_devel_task.milestone.name, 'test')
 
     def test_non_current_dev_lacks_conjoined(self):
-        """Tasks not the current dev focus lacks conjoined masters or slaves.
+        """Tasks not the current dev focus lacks conjoined mains or subordinates.
         """
         # Only owners, experts, or admins can create a series.
         login('foo.bar@canonical.com')
@@ -1942,8 +1942,8 @@ class TestConjoinedBugTasks(TestCaseWithFactory):
 
         stable_netapplet_task = getUtility(IBugTaskSet).createTask(
             ubuntu_netapplet_bug, launchbag.user, alsa_utils_stable)
-        self.assertIsNone(stable_netapplet_task.conjoined_master)
-        self.assertIsNone(stable_netapplet_task.conjoined_slave)
+        self.assertIsNone(stable_netapplet_task.conjoined_main)
+        self.assertIsNone(stable_netapplet_task.conjoined_subordinate)
 
         warty = ubuntu.getSeries('warty')
         self.assertNotEqual(warty, ubuntu.currentseries)
@@ -1952,11 +1952,11 @@ class TestConjoinedBugTasks(TestCaseWithFactory):
             ubuntu_netapplet_bug, launchbag.user,
             warty.getSourcePackage(ubuntu_netapplet.sourcepackagename))
 
-        self.assertIsNone(warty_netapplet_task.conjoined_master)
-        self.assertIsNone(warty_netapplet_task.conjoined_slave)
+        self.assertIsNone(warty_netapplet_task.conjoined_main)
+        self.assertIsNone(warty_netapplet_task.conjoined_subordinate)
 
     def test_no_conjoined_without_current_series(self):
-        """Distributions without current series lack a conjoined master/slave.
+        """Distributions without current series lack a conjoined main/subordinate.
         """
         login('foo.bar@canonical.com')
         launchbag = getUtility(ILaunchBag)
@@ -1973,13 +1973,13 @@ class TestConjoinedBugTasks(TestCaseWithFactory):
         gentoo_netapplet_task = getUtility(IBugTaskSet).createTask(
             ubuntu_netapplet_bug, launchbag.user,
             gentoo.getSourcePackage(ubuntu_netapplet.sourcepackagename))
-        self.assertIsNone(gentoo_netapplet_task.conjoined_master)
-        self.assertIsNone(gentoo_netapplet_task.conjoined_slave)
+        self.assertIsNone(gentoo_netapplet_task.conjoined_main)
+        self.assertIsNone(gentoo_netapplet_task.conjoined_subordinate)
 
     def test_conjoined_broken_relationship(self):
         """A conjoined relationship can be broken, though.
 
-        If the development task (i.e the conjoined master) is Won't Fix, it
+        If the development task (i.e the conjoined main) is Won't Fix, it
         means that the bug is deferred to the next series. In this case the
         development task should be Won't Fix, while the generic task keeps the
         value it had before, allowing it to stay open.
@@ -2015,8 +2015,8 @@ class TestConjoinedBugTasks(TestCaseWithFactory):
         self.assertIsNotNone(current_series_netapplet_task.date_closed)
 
         # And the bugtasks are no longer conjoined:
-        self.assertIsNone(generic_netapplet_task.conjoined_master)
-        self.assertIsNone(current_series_netapplet_task.conjoined_slave)
+        self.assertIsNone(generic_netapplet_task.conjoined_main)
+        self.assertIsNone(current_series_netapplet_task.conjoined_subordinate)
 
         # If the current development release is marked as Invalid, then the
         # bug is invalid for all future series too, and so the general bugtask

@@ -14,8 +14,8 @@ from zope.interface import Interface
 
 class IBuildFarmJobBehavior(Interface):
 
-    def setBuilder(builder, slave):
-        """Sets the associated builder and slave for this instance."""
+    def setBuilder(builder, subordinate):
+        """Sets the associated builder and subordinate for this instance."""
 
     def logStartBuild(logger):
         """Log the start of a specific build queue item.
@@ -25,8 +25,8 @@ class IBuildFarmJobBehavior(Interface):
         :param logger: A logger to be used to log diagnostic information.
         """
 
-    def dispatchBuildToSlave(build_queue_item_id, logger):
-        """Dispatch a specific build to the slave.
+    def dispatchBuildToSubordinate(build_queue_item_id, logger):
+        """Dispatch a specific build to the subordinate.
 
         :param build_queue_item_id: An identifier for the build queue item.
         :param logger: A logger to be used to log diagnostic information.
@@ -41,22 +41,22 @@ class IBuildFarmJobBehavior(Interface):
     def getBuildCookie():
         """Return a string which uniquely identifies the job."""
 
-    def updateSlaveStatus(status_sentence, status_dict):
-        """Update the slave status dict with custom values for this behavior.
+    def updateSubordinateStatus(status_sentence, status_dict):
+        """Update the subordinate status dict with custom values for this behavior.
 
-        :param status_sentence: The value returned by the build slave's
+        :param status_sentence: The value returned by the build subordinate's
            status() method.
-        :param status_dict: A dict of the processed slave status values
+        :param status_dict: A dict of the processed subordinate status values
            provided by all types: builder_status, build_id, and optionally
            build_status or logtail. This should have any behaviour-specific
            values added to it.
         """
 
     def handleStatus(bq, status, status_dict):
-        """Update the build from a WAITING slave result.
+        """Update the build from a WAITING subordinate result.
 
         :param bq: The `BuildQueue` currently being processed.
         :param status: The tail of the BuildStatus (eg. OK or PACKAGEFAIL).
-        :param status_dict: Slave status dict from
-           `BuilderInteractor.slaveStatus` and `updateSlaveStatus`.
+        :param status_dict: Subordinate status dict from
+           `BuilderInteractor.subordinateStatus` and `updateSubordinateStatus`.
         """

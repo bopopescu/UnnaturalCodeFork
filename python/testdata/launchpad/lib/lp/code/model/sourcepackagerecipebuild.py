@@ -35,17 +35,17 @@ from zope.interface import (
     )
 
 from lp.app.errors import NotFoundError
-from lp.buildmaster.enums import (
+from lp.buildmain.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
-from lp.buildmaster.model.buildfarmjob import (
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJobSource
+from lp.buildmain.model.buildfarmjob import (
     BuildFarmJob,
     BuildFarmJobOld,
     )
-from lp.buildmaster.model.buildqueue import BuildQueue
-from lp.buildmaster.model.packagebuild import PackageBuildMixin
+from lp.buildmain.model.buildqueue import BuildQueue
+from lp.buildmain.model.packagebuild import PackageBuildMixin
 from lp.code.errors import (
     BuildAlreadyPending,
     BuildNotAllowedForDistro,
@@ -67,7 +67,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
-    IMasterStore,
+    IMainStore,
     IStore,
     )
 from lp.services.job.model.job import Job
@@ -220,7 +220,7 @@ class SourcePackageRecipeBuild(PackageBuildMixin, Storm):
     def new(cls, distroseries, recipe, requester, archive, pocket=None,
             date_created=None, duration=None):
         """See `ISourcePackageRecipeBuildSource`."""
-        store = IMasterStore(SourcePackageRecipeBuild)
+        store = IMainStore(SourcePackageRecipeBuild)
         if pocket is None:
             pocket = PackagePublishingPocket.RELEASE
         if date_created is None:
@@ -305,7 +305,7 @@ class SourcePackageRecipeBuild(PackageBuildMixin, Storm):
     @classmethod
     def getByID(cls, build_id):
         """See `ISourcePackageRecipeBuildSource`."""
-        store = IMasterStore(SourcePackageRecipeBuild)
+        store = IMainStore(SourcePackageRecipeBuild)
         return store.find(cls, cls.id == build_id).one()
 
     @classmethod
@@ -339,7 +339,7 @@ class SourcePackageRecipeBuild(PackageBuildMixin, Storm):
     def getRecentBuilds(cls, requester, recipe, distroseries, _now=None):
         if _now is None:
             _now = datetime.now(pytz.UTC)
-        store = IMasterStore(SourcePackageRecipeBuild)
+        store = IMainStore(SourcePackageRecipeBuild)
         old_threshold = _now - timedelta(days=1)
         return store.find(cls, cls.distroseries_id == distroseries.id,
             cls.requester_id == requester.id, cls.recipe_id == recipe.id,
@@ -467,7 +467,7 @@ class SourcePackageRecipeBuildJob(BuildFarmJobOld, Storm):
     def new(cls, build, job):
         """See `ISourcePackageRecipeBuildJobSource`."""
         specific_job = cls(build, job)
-        store = IMasterStore(cls)
+        store = IMainStore(cls)
         store.add(specific_job)
         return specific_job
 

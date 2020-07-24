@@ -66,8 +66,8 @@ from lp.archiveuploader.uploadpolicy import (
     UploadPolicyError,
     )
 from lp.archiveuploader.utils import UploadError
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
     )
@@ -813,7 +813,7 @@ def parse_upload_path(relative_path):
             distribution_and_suite, PPAUploadPathError)
 
     elif first_path.isdigit():
-        # This must be a binary upload from a build slave.
+        # This must be a binary upload from a build subordinate.
         try:
             archive = getUtility(IArchiveSet).get(int(first_path))
         except SQLObjectNotFound:

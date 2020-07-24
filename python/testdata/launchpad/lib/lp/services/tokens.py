@@ -12,7 +12,7 @@ __all__ = [
 
 import random
 
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IMainStore
 
 
 def create_token(token_length):
@@ -39,8 +39,8 @@ def create_unique_token_for_table(token_length, column):
 
     :return: A new token string
     """
-    # Use the master Store to ensure no race conditions. 
-    store = IMasterStore(column.cls)
+    # Use the main Store to ensure no race conditions. 
+    store = IMainStore(column.cls)
     token = create_token(token_length)
     while store.find(column.cls, column==token).one() is not None:
         token = create_token(token_length)

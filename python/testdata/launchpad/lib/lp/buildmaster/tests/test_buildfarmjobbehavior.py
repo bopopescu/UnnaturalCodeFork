@@ -15,13 +15,13 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.archiveuploader.uploadprocessor import parse_build_upload_leaf_name
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interactor import BuilderInteractor
-from lp.buildmaster.interfaces.buildfarmjobbehavior import (
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interactor import BuilderInteractor
+from lp.buildmain.interfaces.buildfarmjobbehavior import (
     IBuildFarmJobBehavior,
     )
-from lp.buildmaster.model.buildfarmjobbehavior import BuildFarmJobBehaviorBase
-from lp.buildmaster.tests.mock_slaves import WaitingSlave
+from lp.buildmain.model.buildfarmjobbehavior import BuildFarmJobBehaviorBase
+from lp.buildmain.tests.mock_subordinates import WaitingSubordinate
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.soyuz.interfaces.processor import IProcessorSet
@@ -130,24 +130,24 @@ class TestHandleStatusMixin:
         self.factory = LaunchpadObjectFactory()
         self.build = self.makeBuild()
         # For the moment, we require a builder for the build so that
-        # handleStatus_OK can get a reference to the slave.
+        # handleStatus_OK can get a reference to the subordinate.
         self.builder = self.factory.makeBuilder()
         self.build.buildqueue_record.markAsBuilding(self.builder)
-        self.slave = WaitingSlave('BuildStatus.OK')
-        self.slave.valid_file_hashes.append('test_file_hash')
+        self.subordinate = WaitingSubordinate('BuildStatus.OK')
+        self.subordinate.valid_file_hashes.append('test_file_hash')
         self.interactor = BuilderInteractor()
         self.behavior = self.interactor.getBuildBehavior(
-            self.build.buildqueue_record, self.builder, self.slave)
+            self.build.buildqueue_record, self.builder, self.subordinate)
 
-        # We overwrite the buildmaster root to use a temp directory.
+        # We overwrite the buildmain root to use a temp directory.
         tempdir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tempdir)
         self.upload_root = tempdir
-        tmp_builddmaster_root = """
-        [builddmaster]
+        tmp_builddmain_root = """
+        [builddmain]
         root: %s
         """ % self.upload_root
-        config.push('tmp_builddmaster_root', tmp_builddmaster_root)
+        config.push('tmp_builddmain_root', tmp_builddmain_root)
 
         # We stub out our builds getUploaderCommand() method so
         # we can check whether it was called as well as
@@ -162,7 +162,7 @@ class TestHandleStatusMixin:
     def test_handleStatus_OK_normal_file(self):
         # A filemap with plain filenames should not cause a problem.
         # The call to handleStatus will attempt to get the file from
-        # the slave resulting in a URL error in this test case.
+        # the subordinate resulting in a URL error in this test case.
         def got_status(ignored):
             self.assertEqual(BuildStatus.UPLOADING, self.build.status)
             self.assertResultCount(1, "incoming")
@@ -254,7 +254,7 @@ class TestHandleStatusMixin:
     def test_handleStatus_ABORTED_recovers_building(self):
         self.builder.vm_host = "fake_vm_host"
         self.behavior = self.interactor.getBuildBehavior(
-            self.build.buildqueue_record, self.builder, self.slave)
+            self.build.buildqueue_record, self.builder, self.subordinate)
         self.build.updateStatus(BuildStatus.BUILDING)
 
         def got_status(ignored):
@@ -263,7 +263,7 @@ class TestHandleStatusMixin:
             self.assertEqual(BuildStatus.NEEDSBUILD, self.build.status)
             self.assertEqual(1, self.builder.failure_count)
             self.assertEqual(1, self.build.failure_count)
-            self.assertIn("clean", self.slave.call_log)
+            self.assertIn("clean", self.subordinate.call_log)
 
         d = self.behavior.handleStatus(
             self.build.buildqueue_record, "ABORTED", {})

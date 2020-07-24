@@ -393,7 +393,7 @@ class TestBugWatch(TestCaseWithFactory):
             [product_task], list(
                 removeSecurityProxy(watch).bugtasks_to_update))
         # If we add a task such that the existing task becomes a
-        # conjoined slave, only thr master task will be eligible for
+        # conjoined subordinate, only thr main task will be eligible for
         # update.
         product_series_task = self.factory.makeBugTask(
             bug=bug, target=product.development_focus)

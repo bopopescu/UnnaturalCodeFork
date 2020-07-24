@@ -30,7 +30,7 @@ from lp.bugs.interfaces.externalbugtracker import UNKNOWN_REMOTE_IMPORTANCE
 from lp.bugs.model.bugnotification import BugNotification
 from lp.bugs.scripts import bugimport
 from lp.bugs.scripts.checkwatches import (
-    CheckwatchesMaster,
+    CheckwatchesMain,
     core,
     )
 from lp.bugs.scripts.checkwatches.remotebugupdater import RemoteBugUpdater
@@ -840,7 +840,7 @@ class TestBugWatch:
     def updateStatus(self, new_remote_status, new_malone_status):
         """See `IBugWatch`."""
         for bugtask in self.bug.bugtasks:
-            if bugtask.conjoined_master is not None:
+            if bugtask.conjoined_main is not None:
                 continue
             bugtask = removeSecurityProxy(bugtask)
             bugtask._status = new_malone_status
@@ -975,8 +975,8 @@ class TestRemoteBugUpdater(RemoteBugUpdater):
             ]
 
 
-class TestCheckwatchesMaster(CheckwatchesMaster):
-    """A mock `CheckwatchesMaster` object."""
+class TestCheckwatchesMain(CheckwatchesMain):
+    """A mock `CheckwatchesMain` object."""
 
     def _updateBugTracker(self, bug_tracker):
         # Save the current bug tracker, so _getBugWatch can reference it.
@@ -984,12 +984,12 @@ class TestCheckwatchesMaster(CheckwatchesMaster):
         reload = core.reload
         try:
             core.reload = lambda objects: objects
-            super(TestCheckwatchesMaster, self)._updateBugTracker(bug_tracker)
+            super(TestCheckwatchesMain, self)._updateBugTracker(bug_tracker)
         finally:
             core.reload = reload
 
     def _getExternalBugTrackersAndWatches(self, bug_tracker, bug_watches):
-        """See `CheckwatchesMaster`."""
+        """See `CheckwatchesMain`."""
         return [(TestExternalBugTracker(bug_tracker.baseurl), bug_watches)]
 
     def remote_bug_updater_factory(self, parent, external_bugtracker,
@@ -1023,7 +1023,7 @@ class CheckwatchesErrorRecoveryTestCase(TestCase):
         # try and update two bug watches - the first will
         # trigger a DB error, the second updates successfully.
         bug_tracker = TestBugTracker(test_bug_one, test_bug_two)
-        bug_watch_updater = TestCheckwatchesMaster(self.layer.txn)
+        bug_watch_updater = TestCheckwatchesMain(self.layer.txn)
         self.layer.txn.commit()
         bug_watch_updater._updateBugTracker(bug_tracker)
         # We verify that the first bug watch didn't update the status,

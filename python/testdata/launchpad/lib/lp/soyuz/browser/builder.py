@@ -34,11 +34,11 @@ from lp.app.browser.launchpadform import (
     LaunchpadFormView,
     )
 from lp.app.widgets.owner import HiddenUserWidget
-from lp.buildmaster.interfaces.builder import (
+from lp.buildmain.interfaces.builder import (
     IBuilder,
     IBuilderSet,
     )
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmain.model.buildqueue import BuildQueue
 from lp.services.database.interfaces import IStore
 from lp.services.propertycache import (
     cachedproperty,
@@ -372,7 +372,7 @@ class BuilderEditView(LaunchpadEditFormView):
         # lazr.lifecycle.snapshot to store the state of the object
         # before and after modification.  This is dangerous for the
         # builder model class because it causes some properties to be
-        # queried that try and communicate with the slave, which cannot
+        # queried that try and communicate with the subordinate, which cannot
         # be done from the webapp (it's generally firewalled).  We could
         # prevent snapshots for individual properties by defining the
         # interface properties with doNotSnapshot() but this doesn't

@@ -1,7 +1,7 @@
 # Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Test publish-ftpmaster cron script."""
+"""Test publish-ftpmain cron script."""
 
 __metaclass__ = type
 
@@ -19,12 +19,12 @@ from zope.component import getUtility
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
-from lp.archivepublisher.scripts.publish_ftpmaster import (
+from lp.archivepublisher.scripts.publish_ftpmain import (
     compose_env_string,
     compose_shell_boolean,
     find_run_parts_dir,
     get_working_dists,
-    PublishFTPMaster,
+    PublishFTPMain,
     shell_quote,
     )
 from lp.registry.interfaces.pocket import (
@@ -33,7 +33,7 @@ from lp.registry.interfaces.pocket import (
     )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IMainStore
 from lp.services.log.logger import (
     BufferLogger,
     DevNullLogger,
@@ -123,7 +123,7 @@ def get_marker_files(script, distroseries):
 
 
 class HelpersMixin:
-    """Helpers for the PublishFTPMaster tests."""
+    """Helpers for the PublishFTPMain tests."""
 
     def enableRunParts(self, parts_directory=None):
         """Set up for run-parts execution.
@@ -155,10 +155,10 @@ class HelpersMixin:
             publish_root_dir=unicode(self.makeTemporaryDirectory()))
 
     def makeScript(self, distro=None, extra_args=[]):
-        """Produce instance of the `PublishFTPMaster` script."""
+        """Produce instance of the `PublishFTPMain` script."""
         if distro is None:
             distro = self.makeDistroWithPublishDirectory()
-        script = PublishFTPMaster(test_args=["-d", distro.name] + extra_args)
+        script = PublishFTPMain(test_args=["-d", distro.name] + extra_args)
         script.txn = self.layer.txn
         script.logger = DevNullLogger()
         return script
@@ -170,7 +170,7 @@ class HelpersMixin:
             self.makeTemporaryDirectory())
 
 
-class TestPublishFTPMasterHelpers(TestCase):
+class TestPublishFTPMainHelpers(TestCase):
 
     def test_compose_env_string_iterates_env_dict(self):
         env = {
@@ -235,11 +235,11 @@ class TestFindRunPartsDir(TestCaseWithFactory, HelpersMixin):
         self.assertIs(None, find_run_parts_dir(distro, "finalize.d"))
 
 
-class TestPublishFTPMasterScript(TestCaseWithFactory, HelpersMixin):
+class TestPublishFTPMainScript(TestCaseWithFactory, HelpersMixin):
     layer = LaunchpadZopelessLayer
 
     # Location of shell script.
-    SCRIPT_PATH = "cronscripts/publish-ftpmaster.py"
+    SCRIPT_PATH = "cronscripts/publish-ftpmain.py"
 
     def prepareUbuntu(self):
         """Obtain a reference to Ubuntu, set up for testing.
@@ -572,13 +572,13 @@ class TestPublishFTPMasterScript(TestCaseWithFactory, HelpersMixin):
 
     def test_processOptions_for_all_derived_finds_derived_distros(self):
         dsp = self.factory.makeDistroSeriesParent()
-        script = PublishFTPMaster(test_args=['--all-derived'])
+        script = PublishFTPMain(test_args=['--all-derived'])
         script.processOptions()
         self.assertIn(dsp.derived_series.distribution, script.distributions)
 
     def test_processOptions_for_all_derived_ignores_nonderived_distros(self):
         distro = self.factory.makeDistribution()
-        script = PublishFTPMaster(test_args=['--all-derived'])
+        script = PublishFTPMain(test_args=['--all-derived'])
         script.processOptions()
         self.assertNotIn(distro, script.distributions)
 
@@ -899,7 +899,7 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         # to publish such distributions.
         series = self.makeDistroSeriesNeedingIndexes()
         pub_config = get_pub_config(series.distribution)
-        IMasterStore(pub_config).remove(pub_config)
+        IMainStore(pub_config).remove(pub_config)
         script = self.makeScript(series.distribution)
         self.assertEqual([], script.listSuitesNeedingIndexes(series))
 

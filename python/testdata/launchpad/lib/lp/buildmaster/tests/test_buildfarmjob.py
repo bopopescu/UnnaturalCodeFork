@@ -18,16 +18,16 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.buildmaster.enums import (
+from lp.buildmain.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interfaces.buildfarmjob import (
+from lp.buildmain.interfaces.buildfarmjob import (
     IBuildFarmJob,
     IBuildFarmJobSet,
     IBuildFarmJobSource,
     )
-from lp.buildmaster.model.buildfarmjob import BuildFarmJob
+from lp.buildmain.model.buildfarmjob import BuildFarmJob
 from lp.services.database.sqlbase import flush_database_updates
 from lp.testing import (
     admin_logged_in,

@@ -11,7 +11,7 @@ from itertools import chain
 
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import UTC_NOW
-from lp.soyuz.scripts.ftpmasterbase import (
+from lp.soyuz.scripts.ftpmainbase import (
     SoyuzScript,
     SoyuzScriptError,
     )

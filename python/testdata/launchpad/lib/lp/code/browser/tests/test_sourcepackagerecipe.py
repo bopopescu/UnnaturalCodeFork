@@ -23,7 +23,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.code.browser.sourcepackagerecipe import (
     SourcePackageRecipeEditView,
     SourcePackageRecipeRequestBuildsView,
@@ -96,7 +96,7 @@ class TestCaseForRecipe(BrowserTestCase):
         """Provide useful defaults."""
         super(TestCaseForRecipe, self).setUp()
         self.chef = self.factory.makePerson(
-            displayname='Master Chef', name='chef')
+            displayname='Main Chef', name='chef')
         self.user = self.chef
         self.ppa = self.factory.makeArchive(
             displayname='Secret PPA', owner=self.chef, name='ppa')
@@ -316,7 +316,7 @@ class TestSourcePackageRecipeAddView(TestCaseForRecipe):
             'Edit Make some food!',
             MatchesTagText(content, 'edit-description'))
         self.assertThat(
-            'Master Chef', MatchesPickerText(content, 'edit-owner'))
+            'Main Chef', MatchesPickerText(content, 'edit-owner'))
         self.assertThat(
             'Secret PPA',
             MatchesPickerText(content, 'edit-daily_build_archive'))
@@ -343,7 +343,7 @@ class TestSourcePackageRecipeAddView(TestCaseForRecipe):
         # The options for the owner include the Good Chefs team.
         options = browser.getControl(name='field.owner.owner').displayOptions
         self.assertEquals(
-            ['Good Chefs (good-chefs)', 'Master Chef (chef)'],
+            ['Good Chefs (good-chefs)', 'Main Chef (chef)'],
             sorted([str(option) for option in options]))
 
     def test_create_new_recipe_team_owner(self):
@@ -369,7 +369,7 @@ class TestSourcePackageRecipeAddView(TestCaseForRecipe):
         branch = self.factory.makeBranch(owner=self.chef)
         text = self.getMainText(branch, '+new-recipe')
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            r'Owner: Master Chef \(chef\) Other:', text)
+            r'Owner: Main Chef \(chef\) Other:', text)
 
     def test_create_new_recipe_suggests_user_team(self):
         """If current user is a member of branch owner, it is suggested."""
@@ -379,7 +379,7 @@ class TestSourcePackageRecipeAddView(TestCaseForRecipe):
         branch = self.factory.makeBranch(owner=team)
         text = self.getMainText(branch, '+new-recipe')
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            r'Owner: Master Chef \(chef\)'
+            r'Owner: Main Chef \(chef\)'
             r' Branch Team \(branch-team\) Other:', text)
 
     def test_create_new_recipe_ignores_non_user_team(self):
@@ -389,7 +389,7 @@ class TestSourcePackageRecipeAddView(TestCaseForRecipe):
         branch = self.factory.makeBranch(owner=team)
         text = self.getMainText(branch, '+new-recipe')
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            r'Owner: Master Chef \(chef\) Other:', text)
+            r'Owner: Main Chef \(chef\) Other:', text)
 
     def test_create_recipe_forbidden_instruction(self):
         # We don't allow the "run" instruction in our recipes.  Make sure this
@@ -515,7 +515,7 @@ class TestSourcePackageRecipeAddView(TestCaseForRecipe):
 
         self.assertEqual(
             get_feedback_messages(browser.contents)[1],
-            'There is already a recipe owned by Master Chef with this name.')
+            'There is already a recipe owned by Main Chef with this name.')
 
     def test_create_recipe_private_branch(self):
         # If a user tries to create source package recipe with a private
@@ -939,7 +939,7 @@ class TestSourcePackageRecipeEditView(TestCaseForRecipe):
 
         self.assertEqual(
             extract_text(find_tags_by_class(browser.contents, 'message')[1]),
-            'There is already a recipe owned by Master Chef with this name.')
+            'There is already a recipe owned by Main Chef with this name.')
 
     def test_edit_recipe_private_branch(self):
         # If a user tries to set source package recipe to use a private
@@ -1085,14 +1085,14 @@ class TestSourcePackageRecipeView(TestCaseForRecipe):
         build = self.makeSuccessfulBuild()
 
         self.assertTextMatchesExpressionIgnoreWhitespace("""\
-            Master Chef Recipes cake_recipe
+            Main Chef Recipes cake_recipe
             .*
             Description Edit
             This recipe .*changes.
 
             Recipe information
             Build schedule: .* Built on request Edit
-            Owner: Master Chef Edit
+            Owner: Main Chef Edit
             Base branch: lp://dev/~chef/chocolate/cake
             Debian version: {debupstream}-0~{revno}
             Daily build archive: Secret PPA Edit
@@ -1440,7 +1440,7 @@ class TestSourcePackageRecipeView(TestCaseForRecipe):
         recipe = self.makeRecipe()
         pattern = dedent("""\
             Request builds for cake_recipe
-            Master Chef
+            Main Chef
             Recipes
             cake_recipe
             Request builds for cake_recipe

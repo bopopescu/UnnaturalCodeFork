@@ -42,8 +42,8 @@ from lp.bugs.interfaces.bug import (
     IBugSet,
     )
 from lp.bugs.model.bugbranch import BugBranch
-from lp.buildmaster.model.buildfarmjob import BuildFarmJob
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmain.model.buildfarmjob import BuildFarmJob
+from lp.buildmain.model.buildqueue import BuildQueue
 from lp.code.bzr import (
     BranchFormat,
     ControlFormat,

@@ -26,7 +26,7 @@ import security  # security.py script
 import upgrade  # upgrade.py script
 
 
-def run_upgrade(options, log, master_con):
+def run_upgrade(options, log, main_con):
     """Invoke upgrade.py in-process.
 
     It would be easier to just invoke the script, but this way we save
@@ -43,7 +43,7 @@ def run_upgrade(options, log, master_con):
     options.comments = False  # Saves about 1s. Apply comments manually.
     # Invoke the database schema upgrade process.
     try:
-        return upgrade.main(master_con)
+        return upgrade.main(main_con)
     except Exception:
         log.exception('Unhandled exception')
         return 1
@@ -51,7 +51,7 @@ def run_upgrade(options, log, master_con):
         log.fatal("upgrade.py failed [%s]", x)
 
 
-def run_security(options, log, master_con):
+def run_security(options, log, main_con):
     """Invoke security.py in-process.
 
     It would be easier to just invoke the script, but this way we save
@@ -65,7 +65,7 @@ def run_security(options, log, master_con):
     security.log = log
     # Invoke the database security reset process.
     try:
-        return security.main(options, master_con)
+        return security.main(options, main_con)
     except Exception:
         log.exception('Unhandled exception')
         return 1
@@ -102,11 +102,11 @@ def main():
         log, options.pgbouncer, options.dbname, options.dbuser)
 
     try:
-        # Master connection, not running in autocommit to allow us to
+        # Main connection, not running in autocommit to allow us to
         # rollback changes on failure.
-        master_con = psycopg2.connect(str(controller.master))
+        main_con = psycopg2.connect(str(controller.main))
     except Exception, x:
-        log.fatal("Unable to open connection to master db (%s)", str(x))
+        log.fatal("Unable to open connection to main db (%s)", str(x))
         return 94
 
     # Preflight checks. Confirm as best we can that the upgrade will
@@ -125,8 +125,8 @@ def main():
     upgrade_run = False
     security_run = False
     replication_paused = False
-    master_disabled = False
-    slaves_disabled = False
+    main_disabled = False
+    subordinates_disabled = False
     outage_start = None
 
     try:
@@ -139,9 +139,9 @@ def main():
         log.info("Outage starts.")
         outage_start = datetime.now()
 
-        # Disable access and kill connections to the master database.
-        master_disabled = controller.disable_master()
-        if not master_disabled:
+        # Disable access and kill connections to the main database.
+        main_disabled = controller.disable_main()
+        if not main_disabled:
             return 95
 
         if not KillConnectionsPreflight(
@@ -150,47 +150,47 @@ def main():
             return 100
 
         log.info("Preflight check succeeded. Starting upgrade.")
-        # Does not commit master_con, even on success.
-        upgrade_rc = run_upgrade(options, log, master_con)
+        # Does not commit main_con, even on success.
+        upgrade_rc = run_upgrade(options, log, main_con)
         upgrade_run = (upgrade_rc == 0)
         if not upgrade_run:
             return upgrade_rc
         log.info("Database patches applied.")
 
-        # Commits master_con on success.
-        security_rc = run_security(options, log, master_con)
+        # Commits main_con on success.
+        security_rc = run_security(options, log, main_con)
         security_run = (security_rc == 0)
         if not security_run:
             return security_rc
 
-        master_disabled = not controller.enable_master()
-        if master_disabled:
+        main_disabled = not controller.enable_main()
+        if main_disabled:
             log.warn("Outage ongoing until pgbouncer bounced.")
             return 96
         else:
             log.info("Outage complete. %s", datetime.now() - outage_start)
 
-        slaves_disabled = controller.disable_slaves()
+        subordinates_disabled = controller.disable_subordinates()
 
         # Resume replication.
         replication_paused = not controller.resume_replication()
         if replication_paused:
             log.error(
                 "Failed to resume replication. Run pg_xlog_replay_pause() "
-                "on all slaves to manually resume.")
+                "on all subordinates to manually resume.")
         else:
             if controller.sync():
-                log.info('Slaves in sync. Updates replicated.')
+                log.info('Subordinates in sync. Updates replicated.')
             else:
                 log.error(
-                    'Slaves failed to sync. Updates may not be replicated.')
+                    'Subordinates failed to sync. Updates may not be replicated.')
 
-        if slaves_disabled:
-            slaves_disabled = not controller.enable_slaves()
-            if slaves_disabled:
+        if subordinates_disabled:
+            subordinates_disabled = not controller.enable_subordinates()
+            if subordinates_disabled:
                 log.warn(
-                    "Failed to enable slave databases in pgbouncer. "
-                    "Now running in master-only mode.")
+                    "Failed to enable subordinate databases in pgbouncer. "
+                    "Now running in main-only mode.")
 
         # We will start seeing connections as soon as pgbouncer is
         # reenabled, so ignore them here.
@@ -203,24 +203,24 @@ def main():
     finally:
         if not security_run:
             log.warning("Rolling back all schema and security changes.")
-            master_con.rollback()
+            main_con.rollback()
 
         # Recovery if necessary.
-        if master_disabled:
-            if controller.enable_master():
+        if main_disabled:
+            if controller.enable_main():
                 log.warning(
-                    "Master reenabled despite earlier failures. "
+                    "Main reenabled despite earlier failures. "
                     "Outage over %s, but we have problems",
                     str(datetime.now() - outage_start))
             else:
                 log.warning(
-                    "Master is still disabled in pgbouncer. Outage ongoing.")
+                    "Main is still disabled in pgbouncer. Outage ongoing.")
 
         if replication_paused:
             controller.resume_replication()
 
-        if slaves_disabled:
-            controller.enable_slaves()
+        if subordinates_disabled:
+            controller.enable_subordinates()
 
 
 if __name__ == '__main__':

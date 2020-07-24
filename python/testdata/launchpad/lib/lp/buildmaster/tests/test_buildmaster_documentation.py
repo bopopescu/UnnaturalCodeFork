@@ -1,7 +1,7 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Runs the doctests for buildmaster module."""
+"""Runs the doctests for buildmain module."""
 
 __metaclass__ = type
 
@@ -29,20 +29,20 @@ from lp.testing.systemdocs import (
     )
 
 
-def buildmasterSetUp(test):
-    """Setup a typical builddmaster test environment.
+def buildmainSetUp(test):
+    """Setup a typical builddmain test environment.
 
-    Log in as ANONYMOUS and perform DB operations as the builddmaster
+    Log in as ANONYMOUS and perform DB operations as the builddmain
     dbuser.
     """
-    test_dbuser = config.builddmaster.dbuser
+    test_dbuser = config.builddmain.dbuser
     login(ANONYMOUS)
     setGlobs(test)
     test.globs['test_dbuser'] = test_dbuser
     switch_dbuser(test_dbuser)
 
 
-def buildmasterTearDown(test):
+def buildmainTearDown(test):
     logout()
 
 
@@ -69,12 +69,12 @@ def test_suite():
     tests_dir = os.path.dirname(os.path.realpath(__file__))
     docs_dir = tests_dir + "/../doc"
 
-    # Add special tests that do not use the default buildmaster setup
+    # Add special tests that do not use the default buildmain setup
     # and teardown.
     for key in sorted(special):
         suite.addTest(special[key])
 
-    # Add tests using the default buildmaster setup and teardown.
+    # Add tests using the default buildmain setup and teardown.
     filenames = [
         filename
         for filename in os.listdir(docs_dir)
@@ -83,8 +83,8 @@ def test_suite():
 
     for filename in sorted(filenames):
         test = LayeredDocFileSuite(
-            "../doc/" + filename, setUp=buildmasterSetUp,
-            tearDown=buildmasterTearDown,
+            "../doc/" + filename, setUp=buildmainSetUp,
+            tearDown=buildmainTearDown,
             stdout_logging_level=logging.WARNING,
             layer=LaunchpadZopelessLayer)
         suite.addTest(test)

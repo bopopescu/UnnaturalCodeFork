@@ -17,7 +17,7 @@ import transaction
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.scripts.base import (

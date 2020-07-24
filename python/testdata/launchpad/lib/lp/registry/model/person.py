@@ -246,7 +246,7 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import IStore
-from lp.services.database.policy import MasterDatabasePolicy
+from lp.services.database.policy import MainDatabasePolicy
 from lp.services.database.sqlbase import (
     cursor,
     quote,
@@ -1518,11 +1518,11 @@ class Person(
         bulk.load_related(Milestone, tasks, ['milestoneID'])
 
         for task in tasks:
-            # We skip masters (instead of slaves) from conjoined relationships
+            # We skip mains (instead of subordinates) from conjoined relationships
             # because we can do that without hittind the DB, which would not
-            # be possible if we wanted to skip the slaves. The simple (but
-            # expensive) way to skip the slaves would be to skip any tasks
-            # that have a non-None .conjoined_master.
+            # be possible if we wanted to skip the subordinates. The simple (but
+            # expensive) way to skip the subordinates would be to skip any tasks
+            # that have a non-None .conjoined_main.
             productseries = task.productseries
             distroseries = task.distroseries
             if productseries is not None and task.product is None:
@@ -1532,10 +1532,10 @@ class Person(
                     continue
             elif distroseries is not None:
                 candidate = None
-                for possible_slave in tasks:
-                    sourcepackagename_id = possible_slave.sourcepackagenameID
+                for possible_subordinate in tasks:
+                    sourcepackagename_id = possible_subordinate.sourcepackagenameID
                     if sourcepackagename_id == task.sourcepackagenameID:
-                        candidate = possible_slave
+                        candidate = possible_subordinate
                 # Distribution.currentseries is expensive to run for every
                 # bugtask (as it goes through every series of that
                 # distribution), but it's a cached property and there's only
@@ -2213,10 +2213,10 @@ class Person(
             coc.active = False
         params = BugTaskSearchParams(self, assignee=self)
         for bug_task in self.searchTasks(params):
-            # If the bugtask has a conjoined master we don't try to
+            # If the bugtask has a conjoined main we don't try to
             # update it, since we will update it correctly when we
-            # update its conjoined master (see bug 193983).
-            if bug_task.conjoined_master is not None:
+            # update its conjoined main (see bug 193983).
+            if bug_task.conjoined_main is not None:
                 continue
 
             # XXX flacoste 2007-11-26 bug=164635 The comparison using id in
@@ -2621,7 +2621,7 @@ class Person(
 
         # We need the preferred email address. This method is called
         # recursively, however, and the email address may have just been
-        # created. So we have to explicitly pull it from the master store
+        # created. So we have to explicitly pull it from the main store
         # until we rewrite this 'icky mess.
         preferred_email = IStore(EmailAddress).find(
             EmailAddress,
@@ -3303,10 +3303,10 @@ class PersonSet:
             "OpenID identifier must not be empty.")
 
         # Load the EmailAddress, Account and OpenIdIdentifier records
-        # from the master (if they exist). We use the master to avoid
+        # from the main (if they exist). We use the main to avoid
         # possible replication lag issues but this might actually be
         # unnecessary.
-        with MasterDatabasePolicy():
+        with MainDatabasePolicy():
             identifier = IStore(OpenIdIdentifier).find(
                 OpenIdIdentifier, identifier=openid_identifier).one()
             email = getUtility(IEmailAddressSet).getByEmail(email_address)

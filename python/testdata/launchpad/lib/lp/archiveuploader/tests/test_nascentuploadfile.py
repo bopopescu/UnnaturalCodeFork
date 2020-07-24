@@ -23,7 +23,7 @@ from lp.archiveuploader.nascentuploadfile import (
     UploadError,
     )
 from lp.archiveuploader.tests import AbsolutelyAnythingGoesUploadPolicy
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.log.logger import BufferLogger
 from lp.services.osutils import write_file

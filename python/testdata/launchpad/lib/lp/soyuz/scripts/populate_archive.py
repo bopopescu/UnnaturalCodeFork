@@ -26,7 +26,7 @@ from lp.soyuz.interfaces.processor import (
     IProcessorSet,
     ProcessorNotFound,
     )
-from lp.soyuz.scripts.ftpmasterbase import (
+from lp.soyuz.scripts.ftpmainbase import (
     SoyuzScript,
     SoyuzScriptError,
     )

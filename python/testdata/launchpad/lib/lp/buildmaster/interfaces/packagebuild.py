@@ -18,7 +18,7 @@ from zope.schema import (
     )
 
 from lp import _
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJob
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.pocket import PackagePublishingPocket

@@ -456,8 +456,8 @@ class TestBug(TestCaseWithFactory):
 
     def test_subscribers_from_dupes_overrides_using_level(self):
         # Bug.getSubscribersFromDuplicates() does not return subscribers
-        # who also have a direct subscription to the master bug provided
-        # that the subscription to the master bug is of the same level
+        # who also have a direct subscription to the main bug provided
+        # that the subscription to the main bug is of the same level
         # or higher as the subscription to the duplicate.
         bug = self.factory.makeBug()
         duplicate_bug = self.factory.makeBug()

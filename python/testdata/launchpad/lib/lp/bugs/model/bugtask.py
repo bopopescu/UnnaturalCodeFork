@@ -267,7 +267,7 @@ class PassthroughValue:
 @block_implicit_flushes
 def validate_conjoined_attribute(self, attr, value):
     # If the value has been wrapped in a _PassthroughValue instance,
-    # then we are being updated by our conjoined master: pass the
+    # then we are being updated by our conjoined main: pass the
     # value through without any checking.
     if isinstance(value, PassthroughValue):
         return value.value
@@ -278,18 +278,18 @@ def validate_conjoined_attribute(self, attr, value):
     if self._SO_creating:
         return value
 
-    # If this is a conjoined slave then call setattr on the master.
-    # Effectively this means that making a change to the slave will
-    # actually make the change to the master (which will then be passed
-    # down to the slave, of course). This helps to prevent OOPSes when
-    # people try to update the conjoined slave via the API.
-    conjoined_master = self.conjoined_master
-    if conjoined_master is not None:
-        setattr(conjoined_master, attr, value)
+    # If this is a conjoined subordinate then call setattr on the main.
+    # Effectively this means that making a change to the subordinate will
+    # actually make the change to the main (which will then be passed
+    # down to the subordinate, of course). This helps to prevent OOPSes when
+    # people try to update the conjoined subordinate via the API.
+    conjoined_main = self.conjoined_main
+    if conjoined_main is not None:
+        setattr(conjoined_main, attr, value)
         return value
 
-    # If there is a conjoined slave, update that.
-    conjoined_bugtask = self.conjoined_slave
+    # If there is a conjoined subordinate, update that.
+    conjoined_bugtask = self.conjoined_subordinate
     if conjoined_bugtask:
         setattr(conjoined_bugtask, attr, PassthroughValue(value))
 
@@ -683,26 +683,26 @@ class BugTask(SQLBase):
         result['pillar_name'] = self.pillar.displayname
         return result
 
-    def getConjoinedMaster(self, bugtasks, bugtasks_by_package=None):
+    def getConjoinedMain(self, bugtasks, bugtasks_by_package=None):
         """See `IBugTask`."""
-        conjoined_master = None
+        conjoined_main = None
         if self.distribution:
             if bugtasks_by_package is None:
                 bugtasks_by_package = (
                     self.bug.getBugTasksByPackageName(bugtasks))
             bugtasks = bugtasks_by_package[self.sourcepackagename]
-            possible_masters = [
+            possible_mains = [
                 bugtask for bugtask in bugtasks
                 if (bugtask.distroseries is not None and
                     bugtask.sourcepackagename == self.sourcepackagename)]
             # Return early, so that we don't have to get currentseries,
             # which is expensive.
-            if len(possible_masters) == 0:
+            if len(possible_mains) == 0:
                 return None
             current_series = self.distribution.currentseries
-            for bugtask in possible_masters:
+            for bugtask in possible_mains:
                 if bugtask.distroseries == current_series:
-                    conjoined_master = bugtask
+                    conjoined_main = bugtask
                     break
         elif self.product:
             assert self.product.development_focusID is not None, (
@@ -710,26 +710,26 @@ class BugTask(SQLBase):
             devel_focusID = self.product.development_focusID
             for bugtask in bugtasks:
                 if bugtask.productseriesID == devel_focusID:
-                    conjoined_master = bugtask
+                    conjoined_main = bugtask
                     break
 
-        if (conjoined_master is not None and
-            conjoined_master.status in self._NON_CONJOINED_STATUSES):
-            conjoined_master = None
-        return conjoined_master
+        if (conjoined_main is not None and
+            conjoined_main.status in self._NON_CONJOINED_STATUSES):
+            conjoined_main = None
+        return conjoined_main
 
     def _get_shortlisted_bugtasks(self):
         return shortlist(self.bug.bugtasks, longest_expected=200)
 
     @property
-    def conjoined_master(self):
+    def conjoined_main(self):
         """See `IBugTask`."""
-        return self.getConjoinedMaster(self._get_shortlisted_bugtasks())
+        return self.getConjoinedMain(self._get_shortlisted_bugtasks())
 
     @property
-    def conjoined_slave(self):
+    def conjoined_subordinate(self):
         """See `IBugTask`."""
-        conjoined_slave = None
+        conjoined_subordinate = None
         if self.distroseries:
             distribution = self.distroseries.distribution
             if self.distroseries != distribution.currentseries:
@@ -738,7 +738,7 @@ class BugTask(SQLBase):
             for bugtask in self._get_shortlisted_bugtasks():
                 if (bugtask.distribution == distribution and
                     bugtask.sourcepackagename == self.sourcepackagename):
-                    conjoined_slave = bugtask
+                    conjoined_subordinate = bugtask
                     break
         elif self.productseries:
             product = self.productseries.product
@@ -747,29 +747,29 @@ class BugTask(SQLBase):
                 return None
             for bugtask in self._get_shortlisted_bugtasks():
                 if bugtask.product == product:
-                    conjoined_slave = bugtask
+                    conjoined_subordinate = bugtask
                     break
 
-        if (conjoined_slave is not None and
+        if (conjoined_subordinate is not None and
             self.status in self._NON_CONJOINED_STATUSES):
-            conjoined_slave = None
-        return conjoined_slave
+            conjoined_subordinate = None
+        return conjoined_subordinate
 
-    def _syncFromConjoinedSlave(self):
-        """Ensure the conjoined master is synched from its slave.
+    def _syncFromConjoinedSubordinate(self):
+        """Ensure the conjoined main is synched from its subordinate.
 
         This method should be used only directly after when the
-        conjoined master has been created after the slave, to ensure
+        conjoined main has been created after the subordinate, to ensure
         that they are in sync from the beginning.
         """
-        conjoined_slave = self.conjoined_slave
+        conjoined_subordinate = self.conjoined_subordinate
 
         for synched_attr in self._CONJOINED_ATTRIBUTES:
-            slave_attr_value = getattr(conjoined_slave, synched_attr)
+            subordinate_attr_value = getattr(conjoined_subordinate, synched_attr)
             # Bypass our checks that prevent setting attributes on
-            # conjoined masters by calling the underlying sqlobject
+            # conjoined mains by calling the underlying sqlobject
             # setter methods directly.
-            setattr(self, synched_attr, PassthroughValue(slave_attr_value))
+            setattr(self, synched_attr, PassthroughValue(subordinate_attr_value))
 
     def transitionToMilestone(self, new_milestone, user):
         """See `IBugTask`."""
@@ -1600,8 +1600,8 @@ class BugTaskSet:
         del get_property_cache(bug).bugtasks
         for bugtask in tasks:
             bugtask.updateTargetNameCache()
-            if bugtask.conjoined_slave:
-                bugtask._syncFromConjoinedSlave()
+            if bugtask.conjoined_subordinate:
+                bugtask._syncFromConjoinedSubordinate()
         removeSecurityProxy(bug)._reconcileAccess()
         return tasks
 
@@ -1692,9 +1692,9 @@ class BugTaskSet:
         Bugtasks cannot transition to Invalid automatically unless they meet
         all the rules stated above.
 
-        This implementation returns the master of the master-slave conjoined
-        pairs of bugtasks. Slave conjoined bugtasks are not included in the
-        list because they can only be expired by calling the master bugtask's
+        This implementation returns the main of the main-subordinate conjoined
+        pairs of bugtasks. Subordinate conjoined bugtasks are not included in the
+        list because they can only be expired by calling the main bugtask's
         transitionToStatus() method. See 'Conjoined Bug Tasks' in
         c.l.doc/bugtasks.txt.
 

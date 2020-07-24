@@ -6,7 +6,7 @@ import sys
 from lp.app.errors import NotFoundError
 from lp.services.scripts.base import LaunchpadScriptFailure
 from lp.soyuz.enums import PackagePublishingStatus
-from lp.soyuz.scripts.ftpmasterbase import (
+from lp.soyuz.scripts.ftpmainbase import (
     SoyuzScript,
     SoyuzScriptError,
     )

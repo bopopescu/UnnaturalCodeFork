@@ -3,7 +3,7 @@
 
 """Tests for base-layout.pt and its macros.
 
-The base-layout master template defines macros that control the layout
+The base-layout main template defines macros that control the layout
 of the page. Any page can use these layout options by including
 
     metal:use-macro='view/macro:page/<layout>"

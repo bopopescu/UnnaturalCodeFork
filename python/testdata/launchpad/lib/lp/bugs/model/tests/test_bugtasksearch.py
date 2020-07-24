@@ -471,9 +471,9 @@ class OnceTests:
         # Duplicate bugs can optionally be excluded from search results.
         # The default behaviour is to include duplicates.
         duplicate_bug = self.bugtasks[0].bug
-        master_bug = self.bugtasks[1].bug
+        main_bug = self.bugtasks[1].bug
         with person_logged_in(self.owner):
-            duplicate_bug.markAsDuplicate(master_bug)
+            duplicate_bug.markAsDuplicate(main_bug)
         params = self.getBugTaskSearchParams(user=None)
         self.assertSearchFinds(params, self.bugtasks)
         # If we explicitly pass the parameter omit_duplicates=False, we get
@@ -2306,7 +2306,7 @@ class TestBugTaskSearch(TestCaseWithFactory):
         # on the bug that would normally trigger lazy evaluation for security
         # checking.  Note that the 'id' attribute does not trigger a check.
         with StormStatementRecorder() as recorder:
-            [task.getConjoinedMaster for task in tasks]
+            [task.getConjoinedMain for task in tasks]
             self.assertThat(recorder, has_expected_queries)
 
     def test_omit_targeted_default_is_false(self):

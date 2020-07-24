@@ -7,10 +7,10 @@ __all__ = [
     'DisallowedStore',
     'IDatabasePolicy',
     'IDBObject',
-    'IMasterObject',
-    'IMasterStore',
+    'IMainObject',
+    'IMainStore',
     'IRequestExpired',
-    'ISlaveStore',
+    'ISubordinateStore',
     'ISQLBase',
     'IStore',
     'IStoreSelector',
@@ -46,8 +46,8 @@ MAIN_STORE = 'main'  # The main database.
 ALL_STORES = frozenset([MAIN_STORE])
 
 DEFAULT_FLAVOR = 'default'  # Default flavor for current state.
-MASTER_FLAVOR = 'master'  # The master database.
-SLAVE_FLAVOR = 'slave'  # A slave database.
+MASTER_FLAVOR = 'main'  # The main database.
+SLAVE_FLAVOR = 'subordinate'  # A subordinate database.
 
 
 class IDatabasePolicy(Interface):
@@ -85,8 +85,8 @@ class IDatabasePolicy(Interface):
         """Hook called when policy is popped from the `IStoreSelector`."""
 
 
-class MasterUnavailable(Exception):
-    """A master (writable replica) database was requested but not available.
+class MainUnavailable(Exception):
+    """A main (writable replica) database was requested but not available.
     """
 
 
@@ -101,13 +101,13 @@ class IStoreSelector(Interface):
 
     Stores come in two flavors - MASTER_FLAVOR and SLAVE_FLAVOR.
 
-    The master is writable and up to date, but we should not use it
-    whenever possible because there is only one master and we don't want
+    The main is writable and up to date, but we should not use it
+    whenever possible because there is only one main and we don't want
     it to be overloaded.
 
-    The slave is read only replica of the master and may lag behind the
-    master. For many purposes such as serving unauthenticated web requests
-    and generating reports this is fine. We can also have as many slave
+    The subordinate is read only replica of the main and may lag behind the
+    main. For many purposes such as serving unauthenticated web requests
+    and generating reports this is fine. We can also have as many subordinate
     databases as we are prepared to pay for, so they will perform better
     because they are less loaded.
     """
@@ -134,15 +134,15 @@ class IStoreSelector(Interface):
         If a SLAVE_FLAVOR is requested, the MASTER_FLAVOR may be returned
         anyway.
 
-        The DEFAULT_FLAVOR flavor may return either a master or slave
+        The DEFAULT_FLAVOR flavor may return either a main or subordinate
         depending on process state. Application code using the
         DEFAULT_FLAVOR flavor should assume they have a MASTER and that
         a higher level will catch the exception raised if an attempt is
         made to write changes to a read only store. DEFAULT_FLAVOR exists
         for backwards compatibility, and new code should explicitly state
-        if they want a master or a slave.
+        if they want a main or a subordinate.
 
-        :raises MasterUnavailable:
+        :raises MainUnavailable:
 
         :raises DisallowedStore:
         """
@@ -154,11 +154,11 @@ class IStore(Interface):
         """See storm.store.Store."""
 
 
-class IMasterStore(IStore):
+class IMainStore(IStore):
     """A writeable Storm Stores."""
 
 
-class ISlaveStore(IStore):
+class ISubordinateStore(IStore):
     """A read-only Storm Store."""
 
 
@@ -166,5 +166,5 @@ class IDBObject(Interface):
     """A Storm database object."""
 
 
-class IMasterObject(IDBObject):
-    """A Storm database object associated with its master Store."""
+class IMainObject(IDBObject):
+    """A Storm database object associated with its main Store."""

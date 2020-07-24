@@ -6,11 +6,11 @@
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import (
+from lp.buildmain.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interfaces.buildfarmjob import (
+from lp.buildmain.interfaces.buildfarmjob import (
     IBuildFarmJob,
     IBuildFarmJobSource,
     )
@@ -208,7 +208,7 @@ class TestBuilderHasBuildRecords(TestHasBuildRecordsInterface):
     def test_binary_only_false(self):
         # A builder can optionally return the more general
         # build farm job objects.
-        from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
+        from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJobSource
         getUtility(IBuildFarmJobSource).new(
             job_type=BuildFarmJobType.RECIPEBRANCHBUILD,
             status=BuildStatus.BUILDING, builder=self.context)

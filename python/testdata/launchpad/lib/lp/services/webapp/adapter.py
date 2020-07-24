@@ -54,15 +54,15 @@ from lp.services.config import (
     )
 from lp.services.database.interfaces import (
     DEFAULT_FLAVOR,
-    IMasterObject,
-    IMasterStore,
+    IMainObject,
+    IMainStore,
     IRequestExpired,
     IStoreSelector,
     MAIN_STORE,
     MASTER_FLAVOR,
     SLAVE_FLAVOR,
     )
-from lp.services.database.policy import MasterDatabasePolicy
+from lp.services.database.policy import MainDatabasePolicy
 from lp.services.database.postgresql import ConnectionString
 from lp.services.log.loglevels import DEBUG2
 from lp.services.stacktrace import (
@@ -467,8 +467,8 @@ class LaunchpadDatabase(Postgres):
     _dsn_user_re = re.compile('user=[^ ]*')
 
     def __init__(self, uri):
-        # The uri is just a property name in the config, such as main_master
-        # or main_slave.
+        # The uri is just a property name in the config, such as main_main
+        # or main_subordinate.
         # We don't invoke the superclass constructor as it has a very limited
         # opinion on what uri is.
         self._uri = uri
@@ -497,7 +497,7 @@ class LaunchpadDatabase(Postgres):
                 % repr(self._uri.database))
 
         assert realm == 'main', 'Unknown realm %s' % realm
-        assert flavor in ('master', 'slave'), 'Unknown flavor %s' % flavor
+        assert flavor in ('main', 'subordinate'), 'Unknown flavor %s' % flavor
 
         # We set self._dsn here rather than in __init__ so when the Store
         # is reconnected it pays attention to any config changes.
@@ -532,7 +532,7 @@ class LaunchpadDatabase(Postgres):
             # Make the altered session setting stick.
             raw_connection.commit()
         else:
-            assert config_entry.endswith('_master'), (
+            assert config_entry.endswith('_main'), (
                 'DB connection URL %s does not meet naming convention.')
 
         _reset_dirty_commit_flags(*flags)
@@ -779,12 +779,12 @@ class StoreSelector:
         """See `IStoreSelector`."""
         db_policy = StoreSelector.get_current()
         if db_policy is None:
-            db_policy = MasterDatabasePolicy(None)
+            db_policy = MainDatabasePolicy(None)
         return db_policy.getStore(name, flavor)
 
 
-# We want to be able to adapt a Storm class to an IStore, IMasterStore or
-# ISlaveStore. Unfortunately, the component architecture provides no
+# We want to be able to adapt a Storm class to an IStore, IMainStore or
+# ISubordinateStore. Unfortunately, the component architecture provides no
 # way for us to declare that a class, and all its subclasses, provides
 # a given interface. This means we need to use an global adapter.
 
@@ -797,30 +797,30 @@ def get_store(storm_class, flavor=DEFAULT_FLAVOR):
         return None
 
 
-def get_master_store(storm_class):
-    """Return the master Store for the given database class."""
+def get_main_store(storm_class):
+    """Return the main Store for the given database class."""
     return get_store(storm_class, MASTER_FLAVOR)
 
 
-def get_slave_store(storm_class):
-    """Return the master Store for the given database class."""
+def get_subordinate_store(storm_class):
+    """Return the main Store for the given database class."""
     return get_store(storm_class, SLAVE_FLAVOR)
 
 
-def get_object_from_master_store(obj):
-    """Return a copy of the given object retrieved from its master Store.
+def get_object_from_main_store(obj):
+    """Return a copy of the given object retrieved from its main Store.
 
-    Returns the object if it already comes from the relevant master Store.
+    Returns the object if it already comes from the relevant main Store.
 
     Registered as a trusted adapter, so if the input is security wrapped,
     so is the result. Otherwise an unwrapped object is returned.
     """
-    master_store = IMasterStore(obj)
-    if master_store is not Store.of(obj):
-        obj = master_store.get(obj.__class__, obj.id)
+    main_store = IMainStore(obj)
+    if main_store is not Store.of(obj):
+        obj = main_store.get(obj.__class__, obj.id)
         if obj is None:
             return None
-    alsoProvides(obj, IMasterObject)
+    alsoProvides(obj, IMainObject)
     return obj
 
 

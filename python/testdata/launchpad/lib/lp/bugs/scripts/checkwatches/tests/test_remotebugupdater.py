@@ -16,7 +16,7 @@ from lp.bugs.interfaces.bugtask import (
     BugTaskImportance,
     BugTaskStatus,
     )
-from lp.bugs.scripts.checkwatches.core import CheckwatchesMaster
+from lp.bugs.scripts.checkwatches.core import CheckwatchesMain
 from lp.bugs.scripts.checkwatches.remotebugupdater import RemoteBugUpdater
 from lp.bugs.tests.externalbugtracker import TestExternalBugTracker
 from lp.services.log.logger import BufferLogger
@@ -49,15 +49,15 @@ class RemoteBugUpdaterTestCase(TestCaseWithFactory):
     def makeUpdater(self, remote_system=None, remote_bug_id=None,
                     bug_watch_ids=None, unmodified_remote_ids=None,
                     logger=None):
-        checkwatches_master = CheckwatchesMaster(transaction)
+        checkwatches_main = CheckwatchesMain(transaction)
         if logger is not None:
-            checkwatches_master.logger = logger
-        return checkwatches_master.remote_bug_updater_factory(
-            checkwatches_master, remote_system, remote_bug_id,
+            checkwatches_main.logger = logger
+        return checkwatches_main.remote_bug_updater_factory(
+            checkwatches_main, remote_system, remote_bug_id,
             bug_watch_ids, unmodified_remote_ids, None)
 
     def test_create(self):
-        # CheckwatchesMaster.remote_bug_updater_factory points to the
+        # CheckwatchesMain.remote_bug_updater_factory points to the
         # RemoteBugUpdater class, so it can be used to create
         # RemoteBugUpdaters.
         remote_system = Bugzilla('http://example.com')

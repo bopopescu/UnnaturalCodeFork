@@ -19,7 +19,7 @@ from lp.soyuz.adapters.packagelocation import (
 
 
 class LpQueryDistro(LaunchpadScript):
-    """Main class for scripts/ftpmaster-tools/lp-query-distro.py."""
+    """Main class for scripts/ftpmain-tools/lp-query-distro.py."""
 
     def __init__(self, *args, **kwargs):
         """Initialize dynamic 'usage' message and LaunchpadScript parent.

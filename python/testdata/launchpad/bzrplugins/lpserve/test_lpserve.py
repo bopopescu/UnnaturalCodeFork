@@ -62,8 +62,8 @@ class TestingLPForkingServiceInAThread(lpserve.LPForkingService):
         # We don't fork, and didn't register, so don't unregister.
         pass
 
-    def _create_master_socket(self):
-        super(TestingLPForkingServiceInAThread, self)._create_master_socket()
+    def _create_main_socket(self):
+        super(TestingLPForkingServiceInAThread, self)._create_main_socket()
         self.service_started.set()
 
     def main_loop(self):
@@ -147,7 +147,7 @@ class TestCaseWithLPForkingService(tests.TestCaseWithTransport):
 
     def send_message_to_service(self, message, one_byte_at_a_time=False):
         client_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        client_sock.connect(self.service.master_socket_path)
+        client_sock.connect(self.service.main_socket_path)
         if one_byte_at_a_time:
             for byte in message:
                 client_sock.send(byte)
@@ -625,11 +625,11 @@ class TestLPServiceInSubprocess(TestCaseWithLPForkingServiceSubprocess):
         path, pid, sock = self.send_fork_request('rocks')
         # We started opening the child, but stop before we get all handles
         # open. After 1 second, the child should get signaled and die.
-        # The master process should notice, and tell us the status of the
+        # The main process should notice, and tell us the status of the
         # exited child.
         val = sock.recv(4096)
         self.assertEqual('exited\n%s\n' % (signal.SIGALRM,), val)
-        # The master process should clean up after the now deceased child.
+        # The main process should clean up after the now deceased child.
         self.assertPathDoesNotExist(path)
 
 

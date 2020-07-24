@@ -242,17 +242,17 @@ CONFIG_DEFAULTS = {
     }
 
 
-def main(options, master_con=None):
+def main(options, main_con=None):
     # Load the config file
     config = SafeConfigParser(CONFIG_DEFAULTS)
     configfile_name = os.path.join(os.path.dirname(__file__), 'security.cfg')
     config.read([configfile_name])
 
-    if master_con is None:
-        master_con = connect()
+    if main_con is None:
+        main_con = connect()
 
     log.info("Resetting permissions.")
-    reset_permissions(master_con, config, options)
+    reset_permissions(main_con, config, options)
     return 0
 
 

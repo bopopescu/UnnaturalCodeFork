@@ -52,13 +52,13 @@ from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscription,
     IStructuralSubscriptionTarget,
     )
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.builder import (
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interfaces.builder import (
     IBuilder,
     IBuilderSet,
     )
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
-from lp.buildmaster.interfaces.buildqueue import IBuildQueue
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJob
+from lp.buildmain.interfaces.buildqueue import IBuildQueue
 from lp.code.interfaces.branch import (
     IBranch,
     IBranchSet,

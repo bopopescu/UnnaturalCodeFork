@@ -348,7 +348,7 @@ class LaunchpadScript:
         """
         dbuser = self.dbuser
         if dbuser is None:
-            connstr = ConnectionString(dbconfig.main_master)
+            connstr = ConnectionString(dbconfig.main_main)
             dbuser = connstr.user or dbconfig.dbuser
         dbconfig.override(dbuser=dbuser, isolation_level=isolation)
         self.txn = transaction

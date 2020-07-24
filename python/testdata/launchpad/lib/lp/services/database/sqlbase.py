@@ -59,8 +59,8 @@ from lp.services.config import dbconfig
 from lp.services.database.interfaces import (
     DEFAULT_FLAVOR,
     DisallowedStore,
-    IMasterObject,
-    IMasterStore,
+    IMainObject,
+    IMainStore,
     ISQLBase,
     IStore,
     IStoreSelector,
@@ -169,20 +169,20 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
     def __init__(self, *args, **kwargs):
         """Extended version of the SQLObjectBase constructor.
 
-        We force use of the master Store.
+        We force use of the main Store.
 
         We refetch any parameters from different stores from the
-        correct master Store.
+        correct main Store.
         """
         # Make it simple to write dumb-invalidators - initialized
         # _cached_properties to a valid list rather than just-in-time
         # creation.
         self._cached_properties = []
-        store = IMasterStore(self.__class__)
+        store = IMainStore(self.__class__)
 
         # The constructor will fail if objects from a different Store
         # are passed in. We need to refetch these objects from the correct
-        # master Store if necessary so the foreign key references can be
+        # main Store if necessary so the foreign key references can be
         # constructed.
         # XXX StuartBishop 2009-03-02 bug=336867: We probably want to remove
         # this code - there are enough other places developers have to be
@@ -219,11 +219,11 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
         return '<%s at 0x%x>' % (self.__class__.__name__, id(self))
 
     def destroySelf(self):
-        my_master = IMasterObject(self)
-        if self is my_master:
+        my_main = IMainObject(self)
+        if self is my_main:
             super(SQLBase, self).destroySelf()
         else:
-            my_master.destroySelf()
+            my_main.destroySelf()
 
     def __eq__(self, other):
         """Equality operator.
@@ -235,7 +235,7 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
         These rules allows objects retrieved from different stores to
         compare equal. The 'is' comparison is to support newly created
         objects that don't yet have an id (and by definition only exist
-        in the Master store).
+        in the Main store).
         """
         naked_self = removeSecurityProxy(self)
         naked_other = removeSecurityProxy(other)
@@ -578,10 +578,10 @@ def connect_string(user=None, dbname=None):
     Allows you to pass the generated connection details to external
     programs like pg_dump or embed in slonik scripts.
     """
-    # We must connect to the read-write DB here, so we use rw_main_master
+    # We must connect to the read-write DB here, so we use rw_main_main
     # directly.
     from lp.services.database.postgresql import ConnectionString
-    con_str = ConnectionString(dbconfig.rw_main_master)
+    con_str = ConnectionString(dbconfig.rw_main_main)
     if user is not None:
         con_str.user = user
     if dbname is not None:

@@ -23,12 +23,12 @@ from zope.interface import (
     )
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.buildmaster.enums import (
+from lp.buildmain.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
-from lp.buildmaster.model.buildfarmjob import BuildFarmJobMixin
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJobSource
+from lp.buildmain.model.buildfarmjob import BuildFarmJobMixin
 from lp.code.model.branch import Branch
 from lp.code.model.branchcollection import GenericBranchCollection
 from lp.code.model.branchjob import (

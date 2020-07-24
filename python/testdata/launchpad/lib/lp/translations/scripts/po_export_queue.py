@@ -21,7 +21,7 @@ from zope.component import (
 from lp.registry.interfaces.productseries import IProductSeries
 from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.services.config import config
-from lp.services.database.policy import SlaveOnlyDatabasePolicy
+from lp.services.database.policy import SubordinateOnlyDatabasePolicy
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.mail.helpers import (
     get_contact_email_addresses,
@@ -376,7 +376,7 @@ def process_request(person, objects, format, logger):
     multiple files) and information about files that we failed to export (if
     any).
     """
-    # Keep as much work off the master store as possible, so we avoid
+    # Keep as much work off the main store as possible, so we avoid
     # opening unnecessary transactions there.  It could be a while
     # before we get to the commit.
     translation_exporter = getUtility(ITranslationExporter)
@@ -417,13 +417,13 @@ def process_queue(transaction_manager, logger):
     while request != no_request:
 
         # This can take a long time.  Make sure we don't open any
-        # transactions on the master store before we really need to.
+        # transactions on the main store before we really need to.
         transaction_manager.commit()
-        with SlaveOnlyDatabasePolicy():
+        with SubordinateOnlyDatabasePolicy():
             person, objects, format, request_ids = request
             result = process_request(person, objects, format, logger)
 
-        # Almost done.  Now we can go back to using the master database
+        # Almost done.  Now we can go back to using the main database
         # where needed.
         result.upload(logger=logger)
         result.notify()

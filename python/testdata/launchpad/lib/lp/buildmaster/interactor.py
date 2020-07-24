@@ -21,12 +21,12 @@ from zope.security.proxy import (
     removeSecurityProxy,
     )
 
-from lp.buildmaster.interfaces.builder import (
+from lp.buildmain.interfaces.builder import (
     BuildDaemonError,
     CannotFetchFile,
     CannotResumeHost,
     )
-from lp.buildmaster.interfaces.buildfarmjobbehavior import (
+from lp.buildmain.interfaces.buildfarmjobbehavior import (
     IBuildFarmJobBehavior,
     )
 from lp.services import encoding
@@ -42,8 +42,8 @@ class QuietQueryFactory(xmlrpc._QueryFactory):
     noisy = False
 
 
-class BuilderSlave(object):
-    """Add in a few useful methods for the XMLRPC slave.
+class BuilderSubordinate(object):
+    """Add in a few useful methods for the XMLRPC subordinate.
 
     :ivar url: The URL of the actual builder. The XML-RPC resource and
         the filecache live beneath this.
@@ -55,7 +55,7 @@ class BuilderSlave(object):
     # production.
 
     def __init__(self, proxy, builder_url, vm_host, timeout, reactor):
-        """Initialize a BuilderSlave.
+        """Initialize a BuilderSubordinate.
 
         :param proxy: An XML-RPC proxy, implementing 'callRemote'. It must
             support passing and returning None objects.
@@ -70,13 +70,13 @@ class BuilderSlave(object):
         self.reactor = reactor
 
     @classmethod
-    def makeBuilderSlave(cls, builder_url, vm_host, timeout, reactor=None,
+    def makeBuilderSubordinate(cls, builder_url, vm_host, timeout, reactor=None,
                          proxy=None):
-        """Create and return a `BuilderSlave`.
+        """Create and return a `BuilderSubordinate`.
 
-        :param builder_url: The URL of the slave buildd machine,
+        :param builder_url: The URL of the subordinate buildd machine,
             e.g. http://localhost:8221
-        :param vm_host: If the slave is virtual, specify its host machine
+        :param vm_host: If the subordinate is virtual, specify its host machine
             here.
         :param reactor: Used by tests to override the Twisted reactor.
         :param proxy: Used By tests to override the xmlrpc.Proxy.
@@ -98,7 +98,7 @@ class BuilderSlave(object):
         return self._with_timeout(self._server.callRemote('abort'))
 
     def clean(self):
-        """Clean up the waiting files and reset the slave's internal state."""
+        """Clean up the waiting files and reset the subordinate's internal state."""
         return self._with_timeout(self._server.callRemote('clean'))
 
     def echo(self, *args):
@@ -152,7 +152,7 @@ class BuilderSlave(object):
     def resume(self, clock=None):
         """Resume the builder in an asynchronous fashion.
 
-        We use the builddmaster configuration 'socket_timeout' as
+        We use the builddmain configuration 'socket_timeout' as
         the process timeout.
 
         :param clock: An optional twisted.internet.task.Clock to override
@@ -163,7 +163,7 @@ class BuilderSlave(object):
         """
         url_components = urlparse(self.url)
         buildd_name = url_components.hostname.split('.')[0]
-        resume_command = config.builddmaster.vm_resume_command % {
+        resume_command = config.builddmain.vm_resume_command % {
             'vm_host': self._vm_host,
             'buildd_name': buildd_name}
         # Twisted API requires string but the configuration provides unicode.
@@ -175,7 +175,7 @@ class BuilderSlave(object):
         return d
 
     def cacheFile(self, logger, libraryfilealias):
-        """Make sure that the file at 'libraryfilealias' is on the slave.
+        """Make sure that the file at 'libraryfilealias' is on the subordinate.
 
         :param logger: A python `Logger` object.
         :param libraryfilealias: An `ILibraryFileAlias`.
@@ -185,9 +185,9 @@ class BuilderSlave(object):
             "Asking builder on %s to ensure it has file %s (%s, %s)" % (
                 self._file_cache_url, libraryfilealias.filename, url,
                 libraryfilealias.content.sha1))
-        return self.sendFileToSlave(libraryfilealias.content.sha1, url)
+        return self.sendFileToSubordinate(libraryfilealias.content.sha1, url)
 
-    def sendFileToSlave(self, sha1, url, username="", password=""):
+    def sendFileToSubordinate(self, sha1, url, username="", password=""):
         """Helper to send the file at 'url' with 'sha1' to this builder."""
         d = self.ensurepresent(sha1, url, username, password)
 
@@ -197,7 +197,7 @@ class BuilderSlave(object):
         return d.addCallback(check_present)
 
     def build(self, buildid, builder_type, chroot_sha1, filemap, args):
-        """Build a thing on this build slave.
+        """Build a thing on this build subordinate.
 
         :param buildid: A string identifying this build.
         :param builder_type: The type of builder needed.
@@ -230,33 +230,33 @@ def extract_vitals_from_db(builder, build_queue=_BQ_UNSPECIFIED):
 class BuilderInteractor(object):
 
     @staticmethod
-    def makeSlaveFromVitals(vitals):
+    def makeSubordinateFromVitals(vitals):
         if vitals.virtualized:
-            timeout = config.builddmaster.virtualized_socket_timeout
+            timeout = config.builddmain.virtualized_socket_timeout
         else:
-            timeout = config.builddmaster.socket_timeout
-        return BuilderSlave.makeBuilderSlave(
+            timeout = config.builddmain.socket_timeout
+        return BuilderSubordinate.makeBuilderSubordinate(
             vitals.url, vitals.vm_host, timeout)
 
     @staticmethod
-    def getBuildBehavior(queue_item, builder, slave):
+    def getBuildBehavior(queue_item, builder, subordinate):
         if queue_item is None:
             return None
         behavior = IBuildFarmJobBehavior(queue_item.specific_job)
-        behavior.setBuilder(builder, slave)
+        behavior.setBuilder(builder, subordinate)
         return behavior
 
     @staticmethod
     @defer.inlineCallbacks
-    def slaveStatus(slave):
-        """Get the slave status for this builder.
+    def subordinateStatus(subordinate):
+        """Get the subordinate status for this builder.
 
-        :return: A Deferred which fires when the slave dialog is complete.
+        :return: A Deferred which fires when the subordinate dialog is complete.
             Its value is a dict containing at least builder_status, but
             potentially other values included by the current build
             behavior.
         """
-        status_sentence = yield slave.status()
+        status_sentence = yield subordinate.status()
         status = {'builder_status': status_sentence[0]}
 
         # Extract detailed status and log information if present.
@@ -271,16 +271,16 @@ class BuilderInteractor(object):
 
     @classmethod
     @defer.inlineCallbacks
-    def rescueIfLost(cls, vitals, slave, expected_cookie, logger=None):
-        """Reset the slave if its job information doesn't match the DB.
+    def rescueIfLost(cls, vitals, subordinate, expected_cookie, logger=None):
+        """Reset the subordinate if its job information doesn't match the DB.
 
-        This checks the build ID reported in the slave status against
+        This checks the build ID reported in the subordinate status against
         the given cookie. If it isn't building what we think it should
-        be, the current build will be aborted and the slave cleaned in
+        be, the current build will be aborted and the subordinate cleaned in
         preparation for a new task.
 
-        :return: A Deferred that fires when the dialog with the slave is
-            finished.  Its return value is True if the slave is lost,
+        :return: A Deferred that fires when the dialog with the subordinate is
+            finished.  Its return value is True if the subordinate is lost,
             False otherwise.
         """
         # 'ident_position' dict relates the position of the job identifier
@@ -293,41 +293,41 @@ class BuilderInteractor(object):
             'BuilderStatus.WAITING': 2
             }
 
-        # Determine the slave's current build cookie. For BUILDING, ABORTING
-        # and WAITING we extract the string from the slave status
+        # Determine the subordinate's current build cookie. For BUILDING, ABORTING
+        # and WAITING we extract the string from the subordinate status
         # sentence, and for IDLE it is None.
-        status_sentence = yield slave.status()
+        status_sentence = yield subordinate.status()
         status = status_sentence[0]
         if status not in ident_position.keys():
-            slave_cookie = None
+            subordinate_cookie = None
         else:
-            slave_cookie = status_sentence[ident_position[status]]
+            subordinate_cookie = status_sentence[ident_position[status]]
 
-        if slave_cookie == expected_cookie:
-            # The master and slave agree about the current job. Continue.
+        if subordinate_cookie == expected_cookie:
+            # The main and subordinate agree about the current job. Continue.
             defer.returnValue(False)
         else:
-            # The master and slave disagree. The master is our master,
-            # so try to rescue the slave.
-            # An IDLE slave doesn't need rescuing (SlaveScanner.scan
+            # The main and subordinate disagree. The main is our main,
+            # so try to rescue the subordinate.
+            # An IDLE subordinate doesn't need rescuing (SubordinateScanner.scan
             # will rescue the DB side instead), and we just have to wait
             # out an ABORTING one.
             if status == 'BuilderStatus.WAITING':
-                yield slave.clean()
+                yield subordinate.clean()
             elif status == 'BuilderStatus.BUILDING':
-                yield slave.abort()
+                yield subordinate.abort()
             if logger:
                 logger.info(
-                    "Builder slave '%s' rescued from %r (expected %r)." %
-                    (vitals.name, slave_cookie, expected_cookie))
+                    "Builder subordinate '%s' rescued from %r (expected %r)." %
+                    (vitals.name, subordinate_cookie, expected_cookie))
             defer.returnValue(True)
 
     @classmethod
-    def resumeSlaveHost(cls, vitals, slave):
-        """Resume the slave host to a known good condition.
+    def resumeSubordinateHost(cls, vitals, subordinate):
+        """Resume the subordinate host to a known good condition.
 
-        Issues 'builddmaster.vm_resume_command' specified in the configuration
-        to resume the slave.
+        Issues 'builddmain.vm_resume_command' specified in the configuration
+        to resume the subordinate.
 
         :raises: CannotResumeHost: if builder is not virtual or if the
             configuration command has failed.
@@ -342,10 +342,10 @@ class BuilderInteractor(object):
         if not vitals.vm_host:
             return defer.fail(CannotResumeHost('Undefined vm_host.'))
 
-        logger = cls._getSlaveScannerLogger()
+        logger = cls._getSubordinateScannerLogger()
         logger.info("Resuming %s (%s)" % (vitals.name, vitals.url))
 
-        d = slave.resume()
+        d = subordinate.resume()
 
         def got_resume_ok((stdout, stderr, returncode)):
             return stdout, stderr
@@ -359,7 +359,7 @@ class BuilderInteractor(object):
 
     @classmethod
     @defer.inlineCallbacks
-    def _startBuild(cls, build_queue_item, vitals, builder, slave, behavior,
+    def _startBuild(cls, build_queue_item, vitals, builder, subordinate, behavior,
                     logger):
         """Start a build on this builder.
 
@@ -379,7 +379,7 @@ class BuilderInteractor(object):
                 "Attempted to start a build on a known-bad builder.")
 
         # If we are building a virtual build, resume the virtual
-        # machine.  Before we try and contact the resumed slave, we're
+        # machine.  Before we try and contact the resumed subordinate, we're
         # going to send it a message.  This is to ensure it's accepting
         # packets from the outside world, because testing has shown that
         # the first packet will randomly fail for no apparent reason.
@@ -387,41 +387,41 @@ class BuilderInteractor(object):
         # also don't care about the result from this message, just that
         # it's sent, hence the "addBoth".  See bug 586359.
         if builder.virtualized:
-            yield cls.resumeSlaveHost(vitals, slave)
-            yield slave.echo("ping")
+            yield cls.resumeSubordinateHost(vitals, subordinate)
+            yield subordinate.echo("ping")
 
-        yield behavior.dispatchBuildToSlave(build_queue_item.id, logger)
+        yield behavior.dispatchBuildToSubordinate(build_queue_item.id, logger)
 
     @classmethod
-    def resetOrFail(cls, vitals, slave, builder, logger, exception):
-        """Handle "confirmed" build slave failures.
+    def resetOrFail(cls, vitals, subordinate, builder, logger, exception):
+        """Handle "confirmed" build subordinate failures.
 
         Call this when there have been multiple failures that are not just
         the fault of failing jobs, or when the builder has entered an
         ABORTED state without having been asked to do so.
 
-        In case of a virtualized/PPA buildd slave an attempt will be made
-        to reset it (using `resumeSlaveHost`).
+        In case of a virtualized/PPA buildd subordinate an attempt will be made
+        to reset it (using `resumeSubordinateHost`).
 
-        Conversely, a non-virtualized buildd slave will be (marked as)
+        Conversely, a non-virtualized buildd subordinate will be (marked as)
         failed straightaway (using `failBuilder`).
 
         :param logger: The logger object to be used for logging.
         :param exception: An exception to be used for logging.
-        :return: A Deferred that fires after the virtual slave was resumed
-            or immediately if it's a non-virtual slave.
+        :return: A Deferred that fires after the virtual subordinate was resumed
+            or immediately if it's a non-virtual subordinate.
         """
         error_message = str(exception)
         if vitals.virtualized:
             # Virtualized/PPA builder: attempt a reset, unless the failure
-            # was itself a failure to reset.  (In that case, the slave
+            # was itself a failure to reset.  (In that case, the subordinate
             # scanner will try again until we reach the failure threshold.)
             if not isinstance(exception, CannotResumeHost):
                 logger.warn(
                     "Resetting builder: %s -- %s" % (
                         vitals.url, error_message),
                     exc_info=True)
-                return cls.resumeSlaveHost(vitals, slave)
+                return cls.resumeSubordinateHost(vitals, subordinate)
         else:
             # XXX: This should really let the failure bubble up to the
             # scan() method that does the failure counting.
@@ -434,13 +434,13 @@ class BuilderInteractor(object):
 
     @classmethod
     @defer.inlineCallbacks
-    def findAndStartJob(cls, vitals, builder, slave):
-        """Find a job to run and send it to the buildd slave.
+    def findAndStartJob(cls, vitals, builder, subordinate):
+        """Find a job to run and send it to the buildd subordinate.
 
         :return: A Deferred whose value is the `IBuildQueue` instance
             found or None if no job was found.
         """
-        logger = cls._getSlaveScannerLogger()
+        logger = cls._getSubordinateScannerLogger()
         # XXX This method should be removed in favour of two separately
         # called methods that find and dispatch the job.  It will
         # require a lot of test fixing.
@@ -449,7 +449,7 @@ class BuilderInteractor(object):
             logger.debug("No build candidates available for builder.")
             defer.returnValue(None)
 
-        new_behavior = cls.getBuildBehavior(candidate, builder, slave)
+        new_behavior = cls.getBuildBehavior(candidate, builder, subordinate)
         needed_bfjb = type(removeSecurityProxy(
             IBuildFarmJobBehavior(candidate.specific_job)))
         if not zope_isinstance(new_behavior, needed_bfjb):
@@ -457,14 +457,14 @@ class BuilderInteractor(object):
                 "Inappropriate IBuildFarmJobBehavior: %r is not a %r" %
                 (new_behavior, needed_bfjb))
         yield cls._startBuild(
-            candidate, vitals, builder, slave, new_behavior, logger)
+            candidate, vitals, builder, subordinate, new_behavior, logger)
         defer.returnValue(candidate)
 
     @staticmethod
     def extractBuildStatus(status_dict):
         """Read build status name.
 
-        :param status_dict: build status dict from slaveStatus.
+        :param status_dict: build status dict from subordinateStatus.
         :return: the unqualified status name, e.g. "OK".
         """
         status_string = status_dict['build_status']
@@ -475,18 +475,18 @@ class BuilderInteractor(object):
 
     @classmethod
     @defer.inlineCallbacks
-    def updateBuild(cls, vitals, slave, builder_factory, behavior_factory):
+    def updateBuild(cls, vitals, subordinate, builder_factory, behavior_factory):
         """Verify the current build job status.
 
         Perform the required actions for each state.
 
-        :return: A Deferred that fires when the slave dialog is finished.
+        :return: A Deferred that fires when the subordinate dialog is finished.
         """
         # IDLE is deliberately not handled here, because it should be
-        # impossible to get past rescueIfLost unless the slave matches
+        # impossible to get past rescueIfLost unless the subordinate matches
         # the DB, and this method isn't called unless the DB says
         # there's a job.
-        statuses = yield cls.slaveStatus(slave)
+        statuses = yield cls.subordinateStatus(subordinate)
         status_sentence, status_dict = statuses
         builder_status = status_dict['builder_status']
         if builder_status == 'BuilderStatus.BUILDING':
@@ -495,20 +495,20 @@ class BuilderInteractor(object):
                 # XXX: This check should be removed once we confirm it's
                 # not regularly hit.
                 raise AssertionError(
-                    "Job not running when assigned and slave building.")
+                    "Job not running when assigned and subordinate building.")
             vitals.build_queue.logtail = encoding.guess(
                 str(status_dict.get('logtail')))
             transaction.commit()
         elif builder_status == 'BuilderStatus.ABORTING':
             # Build is being aborted.
             vitals.build_queue.logtail = (
-                "Waiting for slave process to be terminated")
+                "Waiting for subordinate process to be terminated")
             transaction.commit()
         elif builder_status == 'BuilderStatus.WAITING':
             # Build has finished. Delegate handling to the build itself.
             builder = builder_factory[vitals.name]
-            behavior = behavior_factory(vitals.build_queue, builder, slave)
-            behavior.updateSlaveStatus(status_sentence, status_dict)
+            behavior = behavior_factory(vitals.build_queue, builder, subordinate)
+            behavior.updateSubordinateStatus(status_sentence, status_dict)
             yield behavior.handleStatus(
                 vitals.build_queue, cls.extractBuildStatus(status_dict),
                 status_dict)
@@ -516,11 +516,11 @@ class BuilderInteractor(object):
             raise AssertionError("Unknown status %s" % builder_status)
 
     @staticmethod
-    def _getSlaveScannerLogger():
-        """Return the logger instance from buildd-slave-scanner.py."""
+    def _getSubordinateScannerLogger():
+        """Return the logger instance from buildd-subordinate-scanner.py."""
         # XXX cprov 20071120: Ideally the Launchpad logging system
         # should be able to configure the root-logger instead of creating
         # a new object, then the logger lookups won't require the specific
         # name argument anymore. See bug 164203.
-        logger = logging.getLogger('slave-scanner')
+        logger = logging.getLogger('subordinate-scanner')
         return logger

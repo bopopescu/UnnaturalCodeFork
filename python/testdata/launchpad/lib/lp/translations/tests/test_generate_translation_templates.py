@@ -18,7 +18,7 @@ from lp.testing.script import run_script
 
 
 class TestGenerateTranslationTemplates(TestCaseWithFactory):
-    """Test slave-side generate-translation-templates script."""
+    """Test subordinate-side generate-translation-templates script."""
     layer = ZopelessDatabaseLayer
 
     result_name = "translation-templates.tar.gz"

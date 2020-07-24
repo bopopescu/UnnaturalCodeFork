@@ -40,7 +40,7 @@ from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IMainStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.stormbase import StormBase
 from lp.services.librarian.model import LibraryFileAlias
@@ -95,12 +95,12 @@ class OAuthBase:
     def _get_store():
         """See `SQLBase`.
 
-        We want all OAuth classes to be retrieved from the master flavour.  If
-        they are retrieved from the slave, there will be problems in the
+        We want all OAuth classes to be retrieved from the main flavour.  If
+        they are retrieved from the subordinate, there will be problems in the
         authorization exchange, since it will be done across applications that
         won't share the session cookies.
         """
-        return IMasterStore(LibraryFileAlias)
+        return IMainStore(LibraryFileAlias)
 
     getStore = _get_store
 

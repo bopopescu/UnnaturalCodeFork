@@ -281,7 +281,7 @@ class DiskPoolEntry:
         assert os.path.exists(fullpath)
 
         if component == self.file_component:
-            # Deleting the master file is only allowed if there
+            # Deleting the main file is only allowed if there
             # are no symlinks left.
             assert not self.symlink_components
             self.file_component = None

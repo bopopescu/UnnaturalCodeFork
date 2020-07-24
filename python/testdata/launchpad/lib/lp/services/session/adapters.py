@@ -11,8 +11,8 @@ from zope.component import adapter
 from zope.interface import implementer
 
 from lp.services.database.interfaces import (
-    IMasterStore,
-    ISlaveStore,
+    IMainStore,
+    ISubordinateStore,
     IStore,
     )
 from lp.services.database.sqlbase import session_store
@@ -20,16 +20,16 @@ from lp.services.session.interfaces import IUseSessionStore
 
 
 @adapter(IUseSessionStore)
-@implementer(IMasterStore)
-def session_master_store(cls):
-    """Adapt a Session database object to an `IMasterStore`."""
+@implementer(IMainStore)
+def session_main_store(cls):
+    """Adapt a Session database object to an `IMainStore`."""
     return session_store()
 
 
 @adapter(IUseSessionStore)
-@implementer(ISlaveStore)
-def session_slave_store(cls):
-    """Adapt a Session database object to an `ISlaveStore`."""
+@implementer(ISubordinateStore)
+def session_subordinate_store(cls):
+    """Adapt a Session database object to an `ISubordinateStore`."""
     return session_store()
 
 

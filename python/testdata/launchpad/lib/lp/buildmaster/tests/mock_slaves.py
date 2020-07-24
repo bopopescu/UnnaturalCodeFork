@@ -6,17 +6,17 @@
 __metaclass__ = type
 
 __all__ = [
-    'AbortingSlave',
-    'BrokenSlave',
-    'BuildingSlave',
+    'AbortingSubordinate',
+    'BrokenSubordinate',
+    'BuildingSubordinate',
     'DeadProxy',
-    'LostBuildingBrokenSlave',
+    'LostBuildingBrokenSubordinate',
     'make_publisher',
     'MockBuilder',
-    'OkSlave',
-    'SlaveTestHelpers',
+    'OkSubordinate',
+    'SubordinateTestHelpers',
     'TrivialBehavior',
-    'WaitingSlave',
+    'WaitingSubordinate',
     ]
 
 import os
@@ -24,14 +24,14 @@ import types
 import xmlrpclib
 
 import fixtures
-from lpbuildd.tests.harness import BuilddSlaveTestSetup
+from lpbuildd.tests.harness import BuilddSubordinateTestSetup
 from testtools.content import Content
 from testtools.content_type import UTF8_TEXT
 from twisted.internet import defer
 from twisted.web import xmlrpc
 
-from lp.buildmaster.interactor import BuilderSlave
-from lp.buildmaster.interfaces.builder import CannotFetchFile
+from lp.buildmain.interactor import BuilderSubordinate
+from lp.buildmain.interfaces.builder import CannotFetchFile
 from lp.services.config import config
 from lp.testing.sampledata import I386_ARCHITECTURE_NAME
 
@@ -63,9 +63,9 @@ class MockBuilder:
 
 
 # XXX: It would be *really* nice to run some set of tests against the real
-# BuilderSlave and this one to prevent interface skew.
-class OkSlave:
-    """An idle mock slave that prints information about itself.
+# BuilderSubordinate and this one to prevent interface skew.
+class OkSubordinate:
+    """An idle mock subordinate that prints information about itself.
 
     The architecture tag can be customised during initialization."""
 
@@ -83,7 +83,7 @@ class OkSlave:
     def build(self, buildid, buildtype, chroot, filemap, args):
         self.call_log.append(
             ('build', buildid, buildtype, chroot, filemap.keys(), args))
-        info = 'OkSlave BUILDING'
+        info = 'OkSubordinate BUILDING'
         return defer.succeed(('BuildStatus.Building', info))
 
     def echo(self, *args):
@@ -106,7 +106,7 @@ class OkSlave:
         self.call_log.append('resume')
         return defer.succeed(("", "", 0))
 
-    def sendFileToSlave(self, sha1, url, username="", password=""):
+    def sendFileToSubordinate(self, sha1, url, username="", password=""):
         d = self.ensurepresent(sha1, url, username, password)
 
         def check_present((present, info)):
@@ -116,7 +116,7 @@ class OkSlave:
         return d.addCallback(check_present)
 
     def cacheFile(self, logger, libraryfilealias):
-        return self.sendFileToSlave(
+        return self.sendFileToSubordinate(
             libraryfilealias.content.sha1, libraryfilealias.http_url)
 
     def getFiles(self, filemap):
@@ -126,11 +126,11 @@ class OkSlave:
         return dl
 
 
-class BuildingSlave(OkSlave):
-    """A mock slave that looks like it's currently building."""
+class BuildingSubordinate(OkSubordinate):
+    """A mock subordinate that looks like it's currently building."""
 
     def __init__(self, build_id='1-1'):
-        super(BuildingSlave, self).__init__()
+        super(BuildingSubordinate, self).__init__()
         self.build_id = build_id
 
     def status(self):
@@ -149,12 +149,12 @@ class BuildingSlave(OkSlave):
         return defer.succeed(None)
 
 
-class WaitingSlave(OkSlave):
-    """A mock slave that looks like it's currently waiting."""
+class WaitingSubordinate(OkSubordinate):
+    """A mock subordinate that looks like it's currently waiting."""
 
     def __init__(self, state='BuildStatus.OK', dependencies=None,
                  build_id='1-1', filemap=None):
-        super(WaitingSlave, self).__init__()
+        super(WaitingSubordinate, self).__init__()
         self.state = state
         self.dependencies = dependencies
         self.build_id = build_id
@@ -163,7 +163,7 @@ class WaitingSlave(OkSlave):
         else:
             self.filemap = filemap
 
-        # By default, the slave only has a buildlog, but callsites
+        # By default, the subordinate only has a buildlog, but callsites
         # can update this list as needed.
         self.valid_file_hashes = ['buildlog']
 
@@ -184,16 +184,16 @@ class WaitingSlave(OkSlave):
         return defer.succeed(None)
 
 
-class AbortingSlave(OkSlave):
-    """A mock slave that looks like it's in the process of aborting."""
+class AbortingSubordinate(OkSubordinate):
+    """A mock subordinate that looks like it's in the process of aborting."""
 
     def status(self):
         self.call_log.append('status')
         return defer.succeed(('BuilderStatus.ABORTING', '1-1'))
 
 
-class LostBuildingBrokenSlave:
-    """A mock slave building bogus Build/BuildQueue IDs that can't be aborted.
+class LostBuildingBrokenSubordinate:
+    """A mock subordinate building bogus Build/BuildQueue IDs that can't be aborted.
 
     When 'aborted' it raises an xmlrpclib.Fault(8002, 'Could not abort')
     """
@@ -214,15 +214,15 @@ class LostBuildingBrokenSlave:
         return defer.succeed(("", "", 0))
 
 
-class BrokenSlave:
-    """A mock slave that reports that it is broken."""
+class BrokenSubordinate:
+    """A mock subordinate that reports that it is broken."""
 
     def __init__(self):
         self.call_log = []
 
     def status(self):
         self.call_log.append('status')
-        return defer.fail(xmlrpclib.Fault(8001, "Broken slave"))
+        return defer.fail(xmlrpclib.Fault(8001, "Broken subordinate"))
 
 
 class TrivialBehavior:
@@ -241,18 +241,18 @@ class DeadProxy(xmlrpc.Proxy):
         return defer.Deferred()
 
 
-class SlaveTestHelpers(fixtures.Fixture):
+class SubordinateTestHelpers(fixtures.Fixture):
 
-    # The URL for the XML-RPC service set up by `BuilddSlaveTestSetup`.
+    # The URL for the XML-RPC service set up by `BuilddSubordinateTestSetup`.
     BASE_URL = 'http://localhost:8221'
     TEST_URL = '%s/rpc/' % (BASE_URL,)
 
-    def getServerSlave(self):
-        """Set up a test build slave server.
+    def getServerSubordinate(self):
+        """Set up a test build subordinate server.
 
-        :return: A `BuilddSlaveTestSetup` object.
+        :return: A `BuilddSubordinateTestSetup` object.
         """
-        tachandler = self.useFixture(BuilddSlaveTestSetup())
+        tachandler = self.useFixture(BuilddSubordinateTestSetup())
         self.addDetail(
             'xmlrpc-log-file',
             Content(
@@ -260,20 +260,20 @@ class SlaveTestHelpers(fixtures.Fixture):
                 lambda: open(tachandler.logfile, 'r').readlines()))
         return tachandler
 
-    def getClientSlave(self, reactor=None, proxy=None):
-        """Return a `BuilderSlave` for use in testing.
+    def getClientSubordinate(self, reactor=None, proxy=None):
+        """Return a `BuilderSubordinate` for use in testing.
 
-        Points to a fixed URL that is also used by `BuilddSlaveTestSetup`.
+        Points to a fixed URL that is also used by `BuilddSubordinateTestSetup`.
         """
-        return BuilderSlave.makeBuilderSlave(
-            self.BASE_URL, 'vmhost', config.builddmaster.socket_timeout,
+        return BuilderSubordinate.makeBuilderSubordinate(
+            self.BASE_URL, 'vmhost', config.builddmain.socket_timeout,
             reactor, proxy)
 
     def makeCacheFile(self, tachandler, filename):
-        """Make a cache file available on the remote slave.
+        """Make a cache file available on the remote subordinate.
 
         :param tachandler: The TacTestSetup object used to start the remote
-            slave.
+            subordinate.
         :param filename: The name of the file to create in the file cache
             area.
         """
@@ -283,22 +283,22 @@ class SlaveTestHelpers(fixtures.Fixture):
         fd.close()
         self.addCleanup(os.unlink, path)
 
-    def triggerGoodBuild(self, slave, build_id=None):
-        """Trigger a good build on 'slave'.
+    def triggerGoodBuild(self, subordinate, build_id=None):
+        """Trigger a good build on 'subordinate'.
 
-        :param slave: A `BuilderSlave` instance to trigger the build on.
+        :param subordinate: A `BuilderSubordinate` instance to trigger the build on.
         :param build_id: The build identifier. If not specified, defaults to
             an arbitrary string.
         :type build_id: str
-        :return: The build id returned by the slave.
+        :return: The build id returned by the subordinate.
         """
         if build_id is None:
             build_id = 'random-build-id'
-        tachandler = self.getServerSlave()
+        tachandler = self.getServerSubordinate()
         chroot_file = 'fake-chroot'
         dsc_file = 'thing'
         self.makeCacheFile(tachandler, chroot_file)
         self.makeCacheFile(tachandler, dsc_file)
-        return slave.build(
+        return subordinate.build(
             build_id, 'debian', chroot_file, {'.dsc': dsc_file},
             {'ogrecomponent': 'main'})

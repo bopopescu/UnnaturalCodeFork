@@ -29,7 +29,7 @@ from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.policy import (
     DatabaseBlockedPolicy,
-    SlaveOnlyDatabasePolicy,
+    SubordinateOnlyDatabasePolicy,
     )
 from lp.services.scripts.base import (
     LaunchpadScript,
@@ -66,7 +66,7 @@ def find_operable_series(distribution):
 
 
 class GenerateExtraOverrides(LaunchpadScript):
-    """Main class for scripts/ftpmaster-tools/generate-task-overrides.py."""
+    """Main class for scripts/ftpmain-tools/generate-task-overrides.py."""
 
     def __init__(self, *args, **kwargs):
         super(GenerateExtraOverrides, self).__init__(*args, **kwargs)
@@ -380,5 +380,5 @@ class GenerateExtraOverrides(LaunchpadScript):
     def main(self):
         """See `LaunchpadScript`."""
         # This code has no need to alter the database.
-        with SlaveOnlyDatabasePolicy():
+        with SubordinateOnlyDatabasePolicy():
             self.process()

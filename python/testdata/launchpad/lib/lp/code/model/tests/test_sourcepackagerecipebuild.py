@@ -19,9 +19,9 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.buildqueue import IBuildQueue
-from lp.buildmaster.model.buildfarmjob import BuildFarmJob
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interfaces.buildqueue import IBuildQueue
+from lp.buildmain.model.buildfarmjob import BuildFarmJob
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
     ISourcePackageRecipeBuildJob,
@@ -512,7 +512,7 @@ class TestSourcePackageRecipeBuild(TestCaseWithFactory):
             SourcePackageRecipeBuild.getByBuildFarmJobs([]))
 
 
-class TestAsBuildmaster(TestCaseWithFactory):
+class TestAsBuildmain(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 

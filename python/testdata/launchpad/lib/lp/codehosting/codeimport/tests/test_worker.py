@@ -1182,14 +1182,14 @@ class TestGitImport(WorkerTest, TestActualImportMixin,
             rcstype='git', url=git_server.get_url(),
             stacked_on_url=stacked_on_url)
 
-    def test_non_master(self):
-        # non-master branches can be specified in the import URL.
+    def test_non_main(self):
+        # non-main branches can be specified in the import URL.
         source_details = self.makeSourceDetails(
             'trunk', [('README', 'Original contents')])
         self.makeForeignCommit(source_details, ref="refs/heads/other",
             message="Message for other")
-        self.makeForeignCommit(source_details, ref="refs/heads/master",
-            message="Message for master")
+        self.makeForeignCommit(source_details, ref="refs/heads/main",
+            message="Message for main")
         source_details.url = urlutils.join_segment_parameters(
                 source_details.url, {"branch": "other"})
         source_transport = get_transport_from_url(source_details.url)

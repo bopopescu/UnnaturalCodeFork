@@ -11,7 +11,7 @@ __all__ = [
 from lazr.restful.fields import Reference
 
 from lp import _
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobOld
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJobOld
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuild
 
 

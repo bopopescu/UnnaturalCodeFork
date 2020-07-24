@@ -377,7 +377,7 @@ class TestNotificationsForDuplicates(TestCaseWithFactory):
 
     def test_comment_notifications(self):
         # New comments are only sent to subscribers of the duplicate
-        # bug, not to subscribers of the master bug.
+        # bug, not to subscribers of the main bug.
         self.dupe_bug.newMessage(
             self.dupe_bug.owner, subject='subject', content='content')
         latest_notification = BugNotification.selectFirst(orderBy='-id')

@@ -38,8 +38,8 @@ from lp.code.model.directbranchcommit import (
 from lp.codehosting.vfs import get_rw_server
 from lp.services.config import config
 from lp.services.database.interfaces import (
-    IMasterStore,
-    ISlaveStore,
+    IMainStore,
+    ISubordinateStore,
     )
 from lp.services.helpers import shortlist
 from lp.services.mail.helpers import (
@@ -176,12 +176,12 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
         try:
             committer = self._makeDirectBranchCommit(branch)
         except StaleLastMirrored as e:
-            # Request a rescan of the branch.  Do this on the master
+            # Request a rescan of the branch.  Do this on the main
             # store, or we won't be able to modify the branch object.
-            # (The master copy may also be more recent, in which case
+            # (The main copy may also be more recent, in which case
             # the rescan won't be necessary).
-            master_branch = IMasterStore(branch).get(Branch, branch.id)
-            master_branch.branchChanged(**get_db_branch_info(**e.info))
+            main_branch = IMainStore(branch).get(Branch, branch.id)
+            main_branch.branchChanged(**get_db_branch_info(**e.info))
             self.logger.warning(
                 "Skipped %s due to stale DB info, and scheduled a new scan.",
                 branch.bzr_identity)
@@ -314,7 +314,7 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
 
         self.logger.info("Exporting to translations branches.")
 
-        self.store = ISlaveStore(Product)
+        self.store = ISubordinateStore(Product)
 
         product_join = Join(
             ProductSeries, Product, ProductSeries.product == Product.id)

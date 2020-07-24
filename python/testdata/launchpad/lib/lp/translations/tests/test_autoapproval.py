@@ -26,7 +26,7 @@ from lp.registry.model.sourcepackagename import (
     SourcePackageName,
     SourcePackageNameSet,
     )
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IMainStore
 from lp.services.worlddata.model.language import (
     Language,
     LanguageSet,
@@ -734,7 +734,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
         self.assertEqual(RosettaImportStatus.NEEDS_REVIEW, old_entry.status)
         self.assertIs(None, old_entry.potemplate)
         self.assertEqual(template, new_entry.potemplate)
-        IMasterStore(old_entry).flush()
+        IMainStore(old_entry).flush()
 
         # The approver deals with the problem by skipping the entry.
         queue._attemptToApprove(old_entry)
@@ -886,7 +886,7 @@ class TestCleanup(TestCaseWithFactory, GardenerDbUserMixin):
     def setUp(self):
         super(TestCleanup, self).setUp()
         self.queue = TranslationImportQueue()
-        self.store = IMasterStore(TranslationImportQueueEntry)
+        self.store = IMainStore(TranslationImportQueueEntry)
 
     def _makeProductEntry(self, path='foo.pot', status=None):
         """Simulate upload for a product."""
@@ -1150,10 +1150,10 @@ class TestAutoBlocking(TestCaseWithFactory):
     def setUp(self):
         super(TestAutoBlocking, self).setUp()
         self.queue = TranslationImportQueue()
-        # Our test queue operates on the master store instead of the
-        # slave store so we don't have to synchronize stores.
-        master_store = IMasterStore(TranslationImportQueueEntry)
-        self.queue._getSlaveStore = FakeMethod(result=master_store)
+        # Our test queue operates on the main store instead of the
+        # subordinate store so we don't have to synchronize stores.
+        main_store = IMainStore(TranslationImportQueueEntry)
+        self.queue._getSubordinateStore = FakeMethod(result=main_store)
 
     def _copyTargetFromEntry(self, entry):
         """Return a dict representing `entry`'s translation target.

@@ -74,8 +74,8 @@ from lp.blueprints.model.specificationsearch import (
 from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtaskfilter import filter_bugtasks_by_context
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
-from lp.buildmaster.model.buildfarmjob import BuildFarmJob
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmain.model.buildfarmjob import BuildFarmJob
+from lp.buildmain.model.buildqueue import BuildQueue
 from lp.code.bzr import (
     BranchFormat,
     ControlFormat,
@@ -169,7 +169,7 @@ from lp.services.database.constants import (
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IMainStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
@@ -1011,7 +1011,7 @@ class Branch(SQLBase, BzrIdentityMixin):
         """See `IBranch`."""
         if isinstance(revision_ids, basestring):
             revision_ids = [revision_ids]
-        IMasterStore(BranchRevision).find(
+        IMainStore(BranchRevision).find(
             BranchRevision,
             BranchRevision.branch == self,
             BranchRevision.revision_id.is_in(

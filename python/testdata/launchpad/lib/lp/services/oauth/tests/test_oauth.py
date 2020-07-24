@@ -28,10 +28,10 @@ class BaseOAuthTestCase(unittest.TestCase):
     """Base tests for the OAuth database classes."""
     layer = DatabaseFunctionalLayer
 
-    def test__get_store_should_return_the_main_master_store(self):
-        """We want all OAuth classes to use the master store.
+    def test__get_store_should_return_the_main_main_store(self):
+        """We want all OAuth classes to use the main store.
         Otherwise, the OAuth exchanges will fail because the authorize
-        screen won't probably find the new request token on the slave store.
+        screen won't probably find the new request token on the subordinate store.
         """
         zstorm = getUtility(IZStorm)
         self.assertEquals(

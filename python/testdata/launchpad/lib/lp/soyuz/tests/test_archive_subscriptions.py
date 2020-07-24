@@ -10,7 +10,7 @@ from testtools.matchers import Equals
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.registry.interfaces.person import PersonVisibility
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.publisher import canonical_url

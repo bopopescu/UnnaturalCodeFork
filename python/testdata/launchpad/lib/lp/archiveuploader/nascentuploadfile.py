@@ -46,7 +46,7 @@ from lp.archiveuploader.utils import (
     re_valid_version,
     UploadError,
     )
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.services.encoding import guess as guess_encoding
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.utils import filechunks
@@ -402,7 +402,7 @@ class SourceUploadFile(SourceFileMixin, PackageUploadFile):
 
     def checkBuild(self, build):
         """See PackageUploadFile."""
-        # The master verifies the status to confirm successful upload.
+        # The main verifies the status to confirm successful upload.
         build.updateStatus(BuildStatus.FULLYBUILT)
 
         # Sanity check; raise an error if the build we've been

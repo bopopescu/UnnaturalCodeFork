@@ -17,14 +17,14 @@ from lp.bugs.interfaces.bugtask import (
     )
 from lp.bugs.interfaces.bugwatch import BugWatchActivityStatus
 from lp.bugs.scripts.checkwatches.bugwatchupdater import BugWatchUpdater
-from lp.bugs.scripts.checkwatches.core import CheckwatchesMaster
+from lp.bugs.scripts.checkwatches.core import CheckwatchesMain
 from lp.bugs.scripts.checkwatches.remotebugupdater import RemoteBugUpdater
 from lp.bugs.tests.externalbugtracker import TestExternalBugTracker
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
-def make_bug_watch_updater(checkwatches_master, bug_watch,
+def make_bug_watch_updater(checkwatches_main, bug_watch,
                            external_bugtracker, server_time=None,
                            can_import_comments=False,
                            can_push_comments=False, can_back_link=False):
@@ -32,8 +32,8 @@ def make_bug_watch_updater(checkwatches_master, bug_watch,
     if server_time is None:
         server_time = datetime.now()
 
-    remote_bug_updater = checkwatches_master.remote_bug_updater_factory(
-        checkwatches_master, external_bugtracker, bug_watch.remotebug,
+    remote_bug_updater = checkwatches_main.remote_bug_updater_factory(
+        checkwatches_main, external_bugtracker, bug_watch.remotebug,
         [bug_watch.id], [], server_time)
 
     bug_watch_updater = BugWatchUpdater(
@@ -103,7 +103,7 @@ class BugWatchUpdaterTestCase(TestCaseWithFactory):
 
     def setUp(self):
         super(BugWatchUpdaterTestCase, self).setUp()
-        self.checkwatches_master = CheckwatchesMaster(transaction)
+        self.checkwatches_main = CheckwatchesMain(transaction)
         self.bug_task = self.factory.makeBugTask()
         self.bug_watch = self.factory.makeBugWatch(bug_task=self.bug_task)
 
@@ -123,7 +123,7 @@ class BugWatchUpdaterTestCase(TestCaseWithFactory):
         # Calling BugWatchUpdater.updateBugWatch() will update the
         # updater's current BugWatch.
         bug_watch_updater = make_bug_watch_updater(
-            self.checkwatches_master, self.bug_watch,
+            self.checkwatches_main, self.bug_watch,
             TestExternalBugTracker('http://example.com'))
 
         bug_watch_updater.updateBugWatch(
@@ -146,7 +146,7 @@ class BugWatchUpdaterTestCase(TestCaseWithFactory):
         external_bugtracker = BrokenCommentSyncingExternalBugTracker(
             'http://example.com')
         bug_watch_updater = make_bug_watch_updater(
-            self.checkwatches_master, self.bug_watch, external_bugtracker,
+            self.checkwatches_main, self.bug_watch, external_bugtracker,
             can_import_comments=True)
 
         bug_watch_updater.updateBugWatch(
@@ -163,7 +163,7 @@ class BugWatchUpdaterTestCase(TestCaseWithFactory):
         external_bugtracker = BrokenCommentSyncingExternalBugTracker(
             'http://example.com')
         bug_watch_updater = make_bug_watch_updater(
-            self.checkwatches_master, self.bug_watch, external_bugtracker,
+            self.checkwatches_main, self.bug_watch, external_bugtracker,
             can_push_comments=True)
 
         self.factory.makeBugComment(
@@ -183,7 +183,7 @@ class BugWatchUpdaterTestCase(TestCaseWithFactory):
         external_bugtracker = BrokenCommentSyncingExternalBugTracker(
             'http://example.com')
         bug_watch_updater = make_bug_watch_updater(
-            self.checkwatches_master, self.bug_watch, external_bugtracker,
+            self.checkwatches_main, self.bug_watch, external_bugtracker,
             can_back_link=True)
 
         bug_watch_updater.updateBugWatch(
@@ -201,7 +201,7 @@ class BugWatchUpdaterTestCase(TestCaseWithFactory):
         external_bugtracker = KnownBrokenCommentSyncingExternalBugTracker(
             'http://example.com')
         bug_watch_updater = make_bug_watch_updater(
-            self.checkwatches_master, self.bug_watch, external_bugtracker,
+            self.checkwatches_main, self.bug_watch, external_bugtracker,
             can_import_comments=True)
 
         bug_watch_updater.updateBugWatch(
@@ -222,7 +222,7 @@ class BugWatchUpdaterTestCase(TestCaseWithFactory):
         # XXX 2010-05-11 gmb bug=578714:
         #     This test can be removed when bug 578714 is fixed.
         remote_bug_updater = RemoteBugUpdater(
-            self.checkwatches_master,
+            self.checkwatches_main,
             BugzillaAPI("http://example.com"),
             self.bug_watch.remotebug, [self.bug_watch.id],
             [], datetime.now())

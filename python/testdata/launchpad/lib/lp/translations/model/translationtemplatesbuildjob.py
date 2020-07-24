@@ -18,10 +18,10 @@ from zope.interface import (
     )
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import BuildFarmJobType
-from lp.buildmaster.interfaces.buildfarmbranchjob import IBuildFarmBranchJob
-from lp.buildmaster.model.buildfarmjob import BuildFarmJobOld
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmain.enums import BuildFarmJobType
+from lp.buildmain.interfaces.buildfarmbranchjob import IBuildFarmBranchJob
+from lp.buildmain.model.buildfarmjob import BuildFarmJobOld
+from lp.buildmain.model.buildqueue import BuildQueue
 from lp.code.interfaces.branchjob import IRosettaUploadJobSource
 from lp.code.model.branchjob import (
     BranchJob,
@@ -31,7 +31,7 @@ from lp.code.model.branchjob import (
 from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.interfaces import (
-    IMasterStore,
+    IMainStore,
     IStore,
     )
 from lp.translations.interfaces.translationtemplatesbuild import (
@@ -139,7 +139,7 @@ class TranslationTemplatesBuildJob(BuildFarmJobOld, BranchJobDerived):
             estimated_duration=duration_estimate,
             job_type=BuildFarmJobType.TRANSLATIONTEMPLATESBUILD,
             job=specific_job.job, processor=build.processor)
-        IMasterStore(BuildQueue).add(build_queue_entry)
+        IMainStore(BuildQueue).add(build_queue_entry)
 
         logger.debug("Made BuildQueue %s.", build_queue_entry.id)
 

@@ -38,15 +38,15 @@ from lp.app.browser.tales import DurationFormatterAPI
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.utils import get_ppa_reference
-from lp.buildmaster.enums import (
+from lp.buildmain.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
-from lp.buildmaster.model.builder import Builder
-from lp.buildmaster.model.buildfarmjob import BuildFarmJob
-from lp.buildmaster.model.buildqueue import BuildQueue
-from lp.buildmaster.model.packagebuild import PackageBuildMixin
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJobSource
+from lp.buildmain.model.builder import Builder
+from lp.buildmain.model.buildfarmjob import BuildFarmJob
+from lp.buildmain.model.buildqueue import BuildQueue
+from lp.buildmain.model.packagebuild import PackageBuildMixin
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -352,10 +352,10 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
     @property
     def can_be_retried(self):
         """See `IBuild`."""
-        # First check that the slave scanner would pick up the build record
+        # First check that the subordinate scanner would pick up the build record
         # if we reset it.
         if not self.archive.canModifySuite(self.distro_series, self.pocket):
-            # The slave scanner would not pick this up, so it cannot be
+            # The subordinate scanner would not pick this up, so it cannot be
             # re-tried.
             return False
 
@@ -540,7 +540,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
         except (ValueError, TypeError):
             raise UnparsableDependencies(
                 "Build dependencies for %s (%s) could not be parsed: '%s'\n"
-                "It indicates that something is wrong in buildd-slaves."
+                "It indicates that something is wrong in buildd-subordinates."
                 % (self.title, self.id, self.dependencies))
 
         remaining_deps = [
@@ -630,12 +630,12 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
     def notify(self, extra_info=None):
         """See `IPackageBuild`.
 
-        If config.buildmaster.build_notification is disable, simply
+        If config.buildmain.build_notification is disable, simply
         return.
 
-        If config.builddmaster.notify_owner is enabled and SPR.creator
+        If config.builddmain.notify_owner is enabled and SPR.creator
         has preferredemail it will send an email to the creator, Bcc:
-        to the config.builddmaster.default_recipient. If one of the
+        to the config.builddmain.default_recipient. If one of the
         conditions was not satisfied, no preferredemail found (autosync
         or untouched packages from debian) or config options disabled,
         it will only send email to the specified default recipient.
@@ -645,7 +645,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
         doc/build-notification.txt for further information.
         """
 
-        if not config.builddmaster.send_build_notification:
+        if not config.builddmain.send_build_notification:
             return
         if self.status == BuildStatus.FULLYBUILT:
             return
@@ -653,8 +653,8 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
         recipients = set()
 
         fromaddress = format_address(
-            config.builddmaster.default_sender_name,
-            config.builddmaster.default_sender_address)
+            config.builddmain.default_sender_name,
+            config.builddmain.default_sender_address)
 
         extra_headers = {
             'X-Launchpad-Build-State': self.status.name,
@@ -683,7 +683,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
         package_was_not_copied = (
             self.archive == self.source_package_release.upload_archive)
 
-        if package_was_not_copied and config.builddmaster.notify_owner:
+        if package_was_not_copied and config.builddmain.notify_owner:
             if (self.archive.is_ppa and creator.inTeam(self.archive.owner)
                 or
                 not self.archive.is_ppa):

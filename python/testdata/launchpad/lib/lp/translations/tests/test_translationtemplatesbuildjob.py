@@ -10,9 +10,9 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobOld
-from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJobOld
+from lp.buildmain.interfaces.buildqueue import IBuildQueueSet
+from lp.buildmain.model.buildqueue import BuildQueue
 from lp.code.interfaces.branch import IBranchSet
 from lp.code.interfaces.branchjob import IBranchJob
 from lp.code.model.branchjob import BranchJob

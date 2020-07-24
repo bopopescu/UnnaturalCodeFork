@@ -12,7 +12,7 @@ from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 import transaction
 
 from lp.registry.model.person import Person
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IMainStore
 from lp.services.database.isolation import TransactionInProgress
 from lp.services.database.sqlbase import quote
 
@@ -25,7 +25,7 @@ class DatabaseTransactionPolicy:
 
         # We want to be sure that inspect_data does not inadvertently
         # make any changes in the database, but we can't run it on the
-        # slave store because it doesn't tolerate replication lag.
+        # subordinate store because it doesn't tolerate replication lag.
         with DatabaseTransactionPolicy(read_only=True):
             inspect_data()
 
@@ -69,13 +69,13 @@ class DatabaseTransactionPolicy:
         Merely creating a policy has no effect.  Use it with "with" to affect
         writability of database transactions.
 
-        :param store: The store to set policy on.  Defaults to the main master
-            store.  You don't want to use this on a slave store!
+        :param store: The store to set policy on.  Defaults to the main main
+            store.  You don't want to use this on a subordinate store!
         :param read_only: Is this policy read-only?
         """
         self.read_only = read_only
         if store is None:
-            self.store = IMasterStore(Person)
+            self.store = IMainStore(Person)
         else:
             self.store = store
 

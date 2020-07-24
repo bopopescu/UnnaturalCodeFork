@@ -75,11 +75,11 @@ class TestNewCodeImports(TestCaseWithFactory):
         login_person(eric)
         code_import = self.factory.makeProductCodeImport(
             git_repo_url='git://git.example.com/fooix.git',
-            branch_name='master', product=fooix, registrant=eric)
+            branch_name='main', product=fooix, registrant=eric)
         transaction.commit()
         msg = message_from_string(stub.test_emails[0][2])
         self.assertEqual('code-import', msg['X-Launchpad-Notification-Type'])
-        self.assertEqual('~eric/fooix/master', msg['X-Launchpad-Branch'])
+        self.assertEqual('~eric/fooix/main', msg['X-Launchpad-Branch'])
         self.assertEqual(
             'A new git code import has been requested '
             'by Eric:\n'
@@ -102,12 +102,12 @@ class TestNewCodeImports(TestCaseWithFactory):
         login_person(eric)
         code_import = self.factory.makePackageCodeImport(
             git_repo_url='git://git.example.com/fooix.git',
-            branch_name='master', sourcepackage=fooix, registrant=eric)
+            branch_name='main', sourcepackage=fooix, registrant=eric)
         transaction.commit()
         msg = message_from_string(stub.test_emails[0][2])
         self.assertEqual('code-import', msg['X-Launchpad-Notification-Type'])
         self.assertEqual(
-            '~eric/foobuntu/manic/fooix/master', msg['X-Launchpad-Branch'])
+            '~eric/foobuntu/manic/fooix/main', msg['X-Launchpad-Branch'])
         self.assertEqual(
             'A new git code import has been requested '
             'by Eric:\n'

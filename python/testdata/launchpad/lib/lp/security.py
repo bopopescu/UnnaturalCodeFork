@@ -55,15 +55,15 @@ from lp.bugs.interfaces.structuralsubscription import IStructuralSubscription
 from lp.bugs.model.bugsubscription import BugSubscription
 from lp.bugs.model.bugtaskflat import BugTaskFlat
 from lp.bugs.model.bugtasksearch import get_bug_privacy_filter
-from lp.buildmaster.interfaces.builder import (
+from lp.buildmain.interfaces.builder import (
     IBuilder,
     IBuilderSet,
     )
-from lp.buildmaster.interfaces.buildfarmjob import (
+from lp.buildmain.interfaces.buildfarmjob import (
     IBuildFarmJob,
     IBuildFarmJobOld,
     )
-from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.buildmain.interfaces.packagebuild import IPackageBuild
 from lp.code.interfaces.branch import (
     IBranch,
     user_has_special_branch_access,

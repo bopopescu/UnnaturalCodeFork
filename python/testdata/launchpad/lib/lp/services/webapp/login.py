@@ -52,7 +52,7 @@ from lp.registry.interfaces.person import (
     TeamEmailAddressError,
     )
 from lp.services.config import config
-from lp.services.database.policy import MasterDatabasePolicy
+from lp.services.database.policy import MainDatabasePolicy
 from lp.services.identity.interfaces.account import AccountSuspendedError
 from lp.services.openid.interfaces.openidconsumer import IOpenIDConsumerStore
 from lp.services.propertycache import cachedproperty
@@ -357,13 +357,13 @@ class OpenIDCallbackView(OpenIDLogin):
         If the account is suspended, we stop and render an error page.
 
         We also update the 'last_write' key in the session if we've done any
-        DB writes, to ensure subsequent requests use the master DB and see
+        DB writes, to ensure subsequent requests use the main DB and see
         the changes we just did.
         """
         identifier = self.openid_response.identity_url.split('/')[-1]
         identifier = identifier.decode('ascii')
         should_update_last_write = False
-        # Force the use of the master database to make sure a lagged slave
+        # Force the use of the main database to make sure a lagged subordinate
         # doesn't fool us into creating a Person/Account when one already
         # exists.
         person_set = getUtility(IPersonSet)
@@ -380,13 +380,13 @@ class OpenIDCallbackView(OpenIDLogin):
         except TeamEmailAddressError:
             return self.team_email_address_template()
 
-        with MasterDatabasePolicy():
+        with MainDatabasePolicy():
             self.login(person)
 
         if should_update_last_write:
             # This is a GET request but we changed the database, so update
             # session_data['last_write'] to make sure further requests use
-            # the master DB and thus see the changes we've just made.
+            # the main DB and thus see the changes we've just made.
             session_data = ISession(self.request)['lp.dbpolicy']
             session_data['last_write'] = datetime.utcnow()
         self._redirect()

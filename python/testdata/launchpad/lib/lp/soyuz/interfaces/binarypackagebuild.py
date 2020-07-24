@@ -41,9 +41,9 @@ from zope.schema import (
     )
 
 from lp import _
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
-from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
+from lp.buildmain.interfaces.packagebuild import IPackageBuild
 from lp.soyuz.interfaces.processor import IProcessor
 from lp.soyuz.interfaces.publishing import ISourcePackagePublishingHistory
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease

@@ -1414,18 +1414,18 @@ class Bug(SQLBase, InformationTypeMixin):
 
         The bugtask is selected by these rules:
         1. It's status is not Invalid.
-        2. It is not a conjoined slave.
+        2. It is not a conjoined subordinate.
         Only one bugtask must meet both conditions to be return. When
         zero or many bugtasks match, None is returned.
         """
-        # We may want to removed the bugtask.conjoined_master check
+        # We may want to removed the bugtask.conjoined_main check
         # below. It is used to simplify the task of converting
-        # conjoined bugtasks to question--since slaves cannot be
+        # conjoined bugtasks to question--since subordinates cannot be
         # directly updated anyway.
         non_invalid_bugtasks = [
             bugtask for bugtask in self.bugtasks
             if (bugtask.status != BugTaskStatus.INVALID
-                and bugtask.conjoined_master is None)]
+                and bugtask.conjoined_main is None)]
         if len(non_invalid_bugtasks) != 1:
             return None
         [valid_bugtask] = non_invalid_bugtasks
@@ -1698,8 +1698,8 @@ class Bug(SQLBase, InformationTypeMixin):
         if bugtask is None:
             return None
 
-        if bugtask.conjoined_master is not None:
-            bugtask = bugtask.conjoined_master
+        if bugtask.conjoined_main is not None:
+            bugtask = bugtask.conjoined_main
 
         if bugtask.status == status:
             return None
@@ -1934,10 +1934,10 @@ class Bug(SQLBase, InformationTypeMixin):
         """Mark this bug as a duplicate of another.
 
         Marking a bug as a duplicate requires a recalculation of the
-        heat of this bug and of the master bug. None of this is done
+        heat of this bug and of the main bug. None of this is done
         here in order to avoid unnecessary repetitions in recursive
         calls for duplicates of this bug, which also become duplicates
-        of the new master bug.
+        of the new main bug.
         """
         field = DuplicateBug()
         field.context = self
@@ -2473,7 +2473,7 @@ class BugSubscriptionInfo:
         """Subscriptions to duplicates of the bug.
 
         Excludes muted subscriptions, and subscribers who can not see the
-        master bug.
+        main bug.
         """
         return IStore(BugSubscription).find(
             BugSubscription,

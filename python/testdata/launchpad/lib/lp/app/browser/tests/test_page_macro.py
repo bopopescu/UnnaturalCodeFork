@@ -73,8 +73,8 @@ class PageMacroDispatcherTestCase(TestPageMacroDispatcherMixin, TestCase):
         adapter = self.getAdapter([self.view], IPathAdapter, name='macro')
         template_path = os.path.normpath(adapter.base.filename)
         self.assertIn('lp/app/templates', template_path)
-        # The base template defines a 'master' macro as the adapter expects.
-        self.assertIn('master', adapter.base.macros.keys())
+        # The base template defines a 'main' macro as the adapter expects.
+        self.assertIn('main', adapter.base.macros.keys())
 
     def test_page(self):
         # A view can be adpated to a page macro object.

@@ -13,10 +13,10 @@ from storm.store import Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.buildqueue import IBuildQueue
-from lp.buildmaster.interfaces.packagebuild import IPackageBuild
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interfaces.buildqueue import IBuildQueue
+from lp.buildmain.interfaces.packagebuild import IPackageBuild
+from lp.buildmain.model.buildqueue import BuildQueue
 from lp.services.job.model.job import Job
 from lp.services.webapp.interaction import ANONYMOUS
 from lp.services.webapp.interfaces import OAuthPermission
@@ -195,7 +195,7 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
         [depwait_build] = depwait_source.createMissingBuilds()
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': u'dep-bin'})
+            subordinate_status={'dependencies': u'dep-bin'})
         return depwait_build
 
     def testBuildqueueRemoval(self):
@@ -250,7 +250,7 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
     def assertRaisesUnparsableDependencies(self, depwait_build, dependencies):
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': dependencies})
+            subordinate_status={'dependencies': dependencies})
         self.assertRaises(
             UnparsableDependencies, depwait_build.updateDependencies)
 
@@ -300,12 +300,12 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
 
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': u'dep-bin (>> 666)'})
+            subordinate_status={'dependencies': u'dep-bin (>> 666)'})
         depwait_build.updateDependencies()
         self.assertEqual(depwait_build.dependencies, u'dep-bin (>> 666)')
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': u'dep-bin (>= 666)'})
+            subordinate_status={'dependencies': u'dep-bin (>= 666)'})
         depwait_build.updateDependencies()
         self.assertEqual(depwait_build.dependencies, u'')
 
@@ -323,12 +323,12 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
 
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': u'dep-bin (= 666)'})
+            subordinate_status={'dependencies': u'dep-bin (= 666)'})
         depwait_build.updateDependencies()
         self.assertEqual(depwait_build.dependencies, u'')
         depwait_build.updateStatus(
             BuildStatus.MANUALDEPWAIT,
-            slave_status={'dependencies': u'dep-bin (= 999)'})
+            subordinate_status={'dependencies': u'dep-bin (= 999)'})
         depwait_build.updateDependencies()
         self.assertEqual(depwait_build.dependencies, u'')
 

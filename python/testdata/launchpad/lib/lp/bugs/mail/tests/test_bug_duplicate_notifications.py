@@ -29,28 +29,28 @@ class TestAssignmentNotification(TestCaseWithFactory):
         self.user = getUtility(ILaunchBag).user
         self.product = self.factory.makeProduct(owner=self.user,
                                                 name='project')
-        self.master_bug = self.factory.makeBug(target=self.product)
+        self.main_bug = self.factory.makeBug(target=self.product)
         self.dup_bug = self.factory.makeBug(target=self.product)
-        self.master_bug_task = self.master_bug.getBugTask(self.product)
-        self.master_bug_task_before_modification = Snapshot(
-            self.master_bug_task,
-            providing=providedBy(self.master_bug_task))
+        self.main_bug_task = self.main_bug.getBugTask(self.product)
+        self.main_bug_task_before_modification = Snapshot(
+            self.main_bug_task,
+            providing=providedBy(self.main_bug_task))
         self.person_subscribed_email = 'person@example.com'
         self.person_subscribed = self.factory.makePerson(
             name='subscribed', displayname='Person',
             email=self.person_subscribed_email)
         self.dup_bug.subscribe(
             self.person_subscribed, subscribed_by=self.user)
-        self.dup_bug.markAsDuplicate(self.master_bug)
+        self.dup_bug.markAsDuplicate(self.main_bug)
 
     def test_dup_subscriber_change_notification_message(self):
         """Duplicate bug number in the reason (email footer) for
-           duplicate subscribers when a master bug is modified."""
+           duplicate subscribers when a main bug is modified."""
         self.assertEqual(len(stub.test_emails), 0, 'emails in queue')
-        self.master_bug_task.transitionToStatus(
+        self.main_bug_task.transitionToStatus(
             BugTaskStatus.CONFIRMED, self.user)
         notify(ObjectModifiedEvent(
-            self.master_bug_task, self.master_bug_task_before_modification,
+            self.main_bug_task, self.main_bug_task_before_modification,
             ['status'], user=self.user))
         transaction.commit()
         self.assertEqual(len(stub.test_emails), 2, 'email not sent')

@@ -25,9 +25,9 @@ from zope.schema import (
     )
 
 from lp import _
-from lp.buildmaster.enums import BuildFarmJobType
-from lp.buildmaster.interfaces.builder import IBuilder
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
+from lp.buildmain.enums import BuildFarmJobType
+from lp.buildmain.interfaces.builder import IBuilder
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJob
 from lp.services.job.interfaces.job import IJob
 from lp.soyuz.interfaces.processor import IProcessor
 

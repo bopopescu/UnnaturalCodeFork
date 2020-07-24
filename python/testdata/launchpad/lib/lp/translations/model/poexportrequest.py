@@ -16,8 +16,8 @@ from lp.services.database.constants import DEFAULT
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
-    IMasterStore,
-    ISlaveStore,
+    IMainStore,
+    ISubordinateStore,
     IStore,
     )
 from lp.services.database.sqlbase import (
@@ -79,7 +79,7 @@ class POExportRequestSet:
             'pofiles': pofile_ids,
             }
 
-        store = IMasterStore(POExportRequest)
+        store = IMainStore(POExportRequest)
 
         if potemplates:
             # Create requests for all these templates, insofar as the same
@@ -118,42 +118,42 @@ class POExportRequestSet:
                 """ % query_params)
 
     def _getOldestLiveRequest(self):
-        """Return the oldest live request on the master store.
+        """Return the oldest live request on the main store.
 
-        Due to replication lag, the master store is always a little
-        ahead of the slave store that exports come from.
+        Due to replication lag, the main store is always a little
+        ahead of the subordinate store that exports come from.
         """
-        master_store = IMasterStore(POExportRequest)
-        sorted_by_id = master_store.find(POExportRequest).order_by(
+        main_store = IMainStore(POExportRequest)
+        sorted_by_id = main_store.find(POExportRequest).order_by(
             POExportRequest.id)
         return sorted_by_id.first()
 
     def _getHeadRequest(self):
         """Return oldest request on the queue."""
-        # Due to replication lag, it's possible that the slave store
+        # Due to replication lag, it's possible that the subordinate store
         # still has copies of requests that have already been completed
-        # and deleted from the master store.  So first get the oldest
-        # request that is "live," i.e. still present on the master
+        # and deleted from the main store.  So first get the oldest
+        # request that is "live," i.e. still present on the main
         # store.
         oldest_live = self._getOldestLiveRequest()
         if oldest_live is None:
             return None
         else:
-            return ISlaveStore(POExportRequest).find(
+            return ISubordinateStore(POExportRequest).find(
                 POExportRequest,
                 POExportRequest.id == oldest_live.id).one()
 
     def getRequest(self):
         """See `IPOExportRequestSet`."""
-        # Exports happen off the slave store.  To ensure that export
+        # Exports happen off the subordinate store.  To ensure that export
         # does not happen until requests have been replicated to the
-        # slave, they are read primarily from the slave even though they
-        # are deleted on the master afterwards.
+        # subordinate, they are read primarily from the subordinate even though they
+        # are deleted on the main afterwards.
         head = self._getHeadRequest()
         if head is None:
             return None, None, None, None
 
-        requests = ISlaveStore(POExportRequest).find(
+        requests = ISubordinateStore(POExportRequest).find(
             POExportRequest,
             POExportRequest.person == head.person,
             POExportRequest.format == head.format,
@@ -176,7 +176,7 @@ class POExportRequestSet:
             # Storm 0.15 does not have direct support for deleting based
             # on is_in expressions and such, so do it the hard way.
             ids_string = ', '.join(sqlvalues(*request_ids))
-            IMasterStore(POExportRequest).execute("""
+            IMainStore(POExportRequest).execute("""
                 DELETE FROM POExportRequest
                 WHERE id in (%s)
                 """ % ids_string)

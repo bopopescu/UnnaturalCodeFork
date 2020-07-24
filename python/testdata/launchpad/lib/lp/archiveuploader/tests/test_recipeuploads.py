@@ -17,7 +17,7 @@ from lp.archiveuploader.uploadprocessor import (
     UploadHandler,
     UploadStatusEnum,
     )
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuildSource,
     )

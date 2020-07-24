@@ -84,7 +84,7 @@ from lp.blueprints.interfaces.specification import ISpecificationSet
 from lp.blueprints.interfaces.sprint import ISprintSet
 from lp.bugs.interfaces.bug import IBugSet
 from lp.bugs.interfaces.malone import IMaloneApplication
-from lp.buildmaster.interfaces.builder import IBuilderSet
+from lp.buildmain.interfaces.builder import IBuilderSet
 from lp.code.errors import (
     CannotHaveLinkedBranch,
     InvalidNamespace,

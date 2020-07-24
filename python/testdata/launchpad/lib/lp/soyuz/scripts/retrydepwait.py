@@ -9,7 +9,7 @@ __all__ = [
 
 import transaction
 
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.bulk import load_related

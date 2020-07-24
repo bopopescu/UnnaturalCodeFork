@@ -44,11 +44,11 @@ from lp.archiveuploader.uploadprocessor import (
     UploadProcessor,
     UploadStatusEnum,
     )
-from lp.buildmaster.enums import (
+from lp.buildmain.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interfaces.buildfarmjobbehavior import (
+from lp.buildmain.interfaces.buildfarmjobbehavior import (
     IBuildFarmJobBehavior,
     )
 from lp.registry.interfaces.distribution import IDistributionSet

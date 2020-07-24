@@ -38,7 +38,7 @@ from lp.services.config import (
     config,
     dbconfig,
     )
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IMainStore
 from lp.services.database.postgresql import ConnectionString
 from lp.services.librarian.interfaces.client import (
     DownloadFailed,
@@ -150,7 +150,7 @@ class FileUploadClient:
             # Get the name of the database the client is using, so that
             # the server can check that the client is using the same
             # database as the server.
-            store = IMasterStore(LibraryFileAlias)
+            store = IMainStore(LibraryFileAlias)
             databaseName = self._getDatabaseName(store)
 
             # Generate new content and alias IDs.
@@ -235,7 +235,7 @@ class FileUploadClient:
             name = name.encode('utf-8')
         self._connect()
         try:
-            database_name = ConnectionString(dbconfig.main_master).dbname
+            database_name = ConnectionString(dbconfig.main_main).dbname
             self._sendLine('STORE %d %s' % (size, name))
             self._sendHeader('Database-Name', database_name)
             self._sendHeader('Content-Type', str(contentType))

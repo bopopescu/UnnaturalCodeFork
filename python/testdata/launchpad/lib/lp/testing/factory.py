@@ -96,12 +96,12 @@ from lp.bugs.interfaces.cve import (
     ICveSet,
     )
 from lp.bugs.model.bug import FileBugData
-from lp.buildmaster.enums import (
+from lp.buildmain.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interfaces.builder import IBuilderSet
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmain.interfaces.builder import IBuilderSet
+from lp.buildmain.model.buildqueue import BuildQueue
 from lp.code.enums import (
     BranchMergeProposalStatus,
     BranchSubscriptionNotificationLevel,
@@ -222,11 +222,11 @@ from lp.services.database.constants import (
     UTC_NOW,
     )
 from lp.services.database.interfaces import (
-    IMasterStore,
+    IMainStore,
     IStore,
     IStoreSelector,
     )
-from lp.services.database.policy import MasterDatabasePolicy
+from lp.services.database.policy import MainDatabasePolicy
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.gpg.interfaces import (
     GPGKeyAlgorithm,
@@ -366,28 +366,28 @@ DIFF = """\
 """
 
 
-def default_master_store(func):
-    """Decorator to temporarily set the default Store to the master.
+def default_main_store(func):
+    """Decorator to temporarily set the default Store to the main.
 
     In some cases, such as in the middle of a page test story,
     we might be calling factory methods with the default Store set
-    to the slave which breaks stuff. For instance, if we set an account's
-    password that needs to happen on the master store and this is forced.
+    to the subordinate which breaks stuff. For instance, if we set an account's
+    password that needs to happen on the main store and this is forced.
     However, if we then read it back the default Store has to be used.
     """
 
-    def with_default_master_store(*args, **kw):
+    def with_default_main_store(*args, **kw):
         try:
             store_selector = getUtility(IStoreSelector)
         except ComponentLookupError:
             # Utilities not registered. No policies.
             return func(*args, **kw)
-        store_selector.push(MasterDatabasePolicy())
+        store_selector.push(MainDatabasePolicy())
         try:
             return func(*args, **kw)
         finally:
             store_selector.pop()
-    return mergeFunctionMetadata(func, with_default_master_store)
+    return mergeFunctionMetadata(func, with_default_main_store)
 
 
 # We use this for default parameters where None has a specific meaning. For
@@ -408,7 +408,7 @@ class GPGSigningContext:
 class ObjectFactory:
     """Factory methods for creating basic Python objects."""
 
-    __metaclass__ = AutoDecorate(default_master_store)
+    __metaclass__ = AutoDecorate(default_main_store)
 
     # This allocates process-wide unique integers.  We count on Python doing
     # only cooperative threading to make this safe across threads.
@@ -590,7 +590,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         # Identifier needed to be created, it will not be usable in the
         # production environments so access to execute this stored
         # procedure cannot be used to compromise accounts.
-        IMasterStore(OpenIdIdentifier).execute(
+        IMainStore(OpenIdIdentifier).execute(
             "SELECT add_test_openid_identifier(%s)", (account.id, ))
 
     def makeGPGKey(self, owner):
@@ -658,7 +658,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         # To make the person someone valid in Launchpad, validate the
         # email.
         if email_address_status == EmailAddressStatus.PREFERRED:
-            account = IMasterStore(Account).get(
+            account = IMainStore(Account).get(
                 Account, person.accountID)
             account.status = AccountStatus.ACTIVE
             person.validateAndEnsurePreferredEmail(email)
@@ -724,7 +724,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if set_preferred_email:
             # setPreferredEmail no longer activates the account
             # automatically.
-            account = IMasterStore(Account).get(Account, person.accountID)
+            account = IMainStore(Account).get(Account, person.accountID)
             account.reactivate("Activated by factory.makePersonByName")
             person.setPreferredEmail(email)
 
@@ -734,7 +734,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             with person_logged_in(person):
                 person.mailing_list_auto_subscribe_policy = (
                     MailingListAutoSubscribePolicy.NEVER)
-        account = IMasterStore(Account).get(Account, person.accountID)
+        account = IMainStore(Account).get(Account, person.accountID)
         getUtility(IEmailAddressSet).new(
             alternative_address, person, EmailAddressStatus.VALIDATED)
         return person
@@ -2751,7 +2751,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """Make a new builder for i386 virtualized builds by default.
 
         Note: the builder returned will not be able to actually build -
-        we currently have a build slave setup for 'bob' only in the
+        we currently have a build subordinate setup for 'bob' only in the
         test environment.
         """
         if processor is None:

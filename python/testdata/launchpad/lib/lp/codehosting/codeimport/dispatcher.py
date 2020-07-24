@@ -88,7 +88,7 @@ class CodeImportDispatcher:
         """How long to sleep for until asking for a new job.
 
         The basic idea is to wait longer if the machine is more heavily
-        loaded, so that less loaded slaves get a chance to grab some jobs.
+        loaded, so that less loaded subordinates get a chance to grab some jobs.
 
         We assume worker_limit will be roughly the number of CPUs in the
         machine, so load/worker_limit is roughly how loaded the machine is.

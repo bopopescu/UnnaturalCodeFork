@@ -79,7 +79,7 @@ from lp.app.widgets.itemswidgets import (
     PlainMultiCheckBoxWidget,
     )
 from lp.app.widgets.textwidgets import StrippedTextWidget
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket

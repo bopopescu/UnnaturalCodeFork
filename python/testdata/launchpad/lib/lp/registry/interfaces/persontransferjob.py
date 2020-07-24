@@ -112,7 +112,7 @@ class IPersonMergeJobSource(IJobSource):
         the from_person and to_person are teams.
 
         :param from_person: An IPerson or ITeam that is a duplicate.
-        :param to_person: An IPerson or ITeam that is a master.
+        :param to_person: An IPerson or ITeam that is a main.
         :param reviewer: An IPerson who approved ITeam merger.
         :param delete: The merge is really a deletion.
         """

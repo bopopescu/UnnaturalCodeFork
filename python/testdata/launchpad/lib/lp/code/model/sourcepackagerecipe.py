@@ -35,7 +35,7 @@ from zope.interface import (
     implements,
     )
 
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.code.errors import (
     BuildAlreadyPending,
     BuildNotAllowedForDistro,
@@ -65,7 +65,7 @@ from lp.services.database.constants import (
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import (
-    IMasterStore,
+    IMainStore,
     IStore,
     )
 from lp.services.database.stormexpr import Greatest
@@ -194,7 +194,7 @@ class SourcePackageRecipe(Storm):
             distroseries=None, daily_build_archive=None, build_daily=False,
             date_created=DEFAULT):
         """See `ISourcePackageRecipeSource.new`."""
-        store = IMasterStore(SourcePackageRecipe)
+        store = IMainStore(SourcePackageRecipe)
         sprecipe = SourcePackageRecipe()
         builder_recipe = SourcePackageRecipeData.getParsedRecipe(recipe)
         SourcePackageRecipeData(builder_recipe, sprecipe)
@@ -235,7 +235,7 @@ class SourcePackageRecipe(Storm):
     @staticmethod
     def exists(owner, name):
         """See `ISourcePackageRecipeSource.new`."""
-        store = IMasterStore(SourcePackageRecipe)
+        store = IMainStore(SourcePackageRecipe)
         recipe = store.find(
             SourcePackageRecipe,
             SourcePackageRecipe.owner == owner,

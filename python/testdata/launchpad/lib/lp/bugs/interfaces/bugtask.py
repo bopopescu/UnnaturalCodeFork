@@ -572,9 +572,9 @@ class IBugTask(IHasDateCreated, IHasBug, IBugTaskDelete):
         title=_("A list of IPersons subscribed to the bug, whether directly "
                 "or indirectly."), readonly=True)
 
-    conjoined_master = Attribute(
+    conjoined_main = Attribute(
         "The series-specific bugtask in a conjoined relationship")
-    conjoined_slave = Attribute(
+    conjoined_subordinate = Attribute(
         "The generic bugtask in a conjoined relationship")
 
     is_complete = exported(
@@ -611,18 +611,18 @@ class IBugTask(IHasDateCreated, IHasBug, IBugTaskDelete):
         calling context does not have access to the person or pillar names.
         """
 
-    def getConjoinedMaster(bugtasks, bugtasks_by_package=None):
-        """Return the conjoined master in the given bugtasks, if any.
+    def getConjoinedMain(bugtasks, bugtasks_by_package=None):
+        """Return the conjoined main in the given bugtasks, if any.
 
         :param bugtasks: The bugtasks to be considered when looking for
-            the conjoined master.
+            the conjoined main.
         :param bugtasks_by_package: A cache, mapping a
             `ISourcePackageName` to a list of bug tasks targeted to such
             a package name. Both distribution and distro series tasks
             should be included in this list.
 
         This method exists mainly to allow calculating the conjoined
-        master from a cached list of bug tasks, reducing the number of
+        main from a cached list of bug tasks, reducing the number of
         db queries needed.
         """
 

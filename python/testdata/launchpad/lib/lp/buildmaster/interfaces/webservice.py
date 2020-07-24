@@ -14,7 +14,7 @@ __all__ = [
     'IBuilderSet',
     ]
 
-from lp.buildmaster.interfaces.builder import (
+from lp.buildmain.interfaces.builder import (
     IBuilder,
     IBuilderSet,
     )

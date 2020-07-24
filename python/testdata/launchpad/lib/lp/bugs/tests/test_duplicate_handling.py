@@ -72,7 +72,7 @@ class TestMarkDuplicateValidation(TestCaseWithFactory):
 
 
 class TestMoveDuplicates(TestCaseWithFactory):
-    """Test duplicates are moved when master bug is marked a duplicate."""
+    """Test duplicates are moved when main bug is marked a duplicate."""
 
     layer = DatabaseFunctionalLayer
 

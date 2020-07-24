@@ -270,7 +270,7 @@ class ProcessWithTimeout(ProcessProtocol, TimeoutMixin):
 
     # XXX Julian 2010-04-21
     # This class doesn't have enough unit tests yet, it's used by
-    # lib/lp/buildmaster/manager.py which tests its features indirectly.
+    # lib/lp/buildmain/manager.py which tests its features indirectly.
     # See lib/lp/services/twistedsupport/tests/test_processmonitor.py -
     # TestProcessWithTimeout for the beginnings of tests.
 

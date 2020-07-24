@@ -118,8 +118,8 @@ class TestNativeArchiveIndexes(TestNativePublishingBase):
         """
         pub_binaries = self.getPubBinaries(
             depends='biscuit', recommends='foo-dev', suggests='pyfoo',
-            conflicts='old-foo', replaces='old-foo', provides='foo-master',
-            pre_depends='master-foo', enhances='foo-super', breaks='old-foo',
+            conflicts='old-foo', replaces='old-foo', provides='foo-main',
+            pre_depends='main-foo', enhances='foo-super', breaks='old-foo',
             phased_update_percentage=50)
         pub_binary = pub_binaries[0]
         self.assertEqual(
@@ -134,10 +134,10 @@ class TestNativeArchiveIndexes(TestNativePublishingBase):
              u'Recommends: foo-dev',
              u'Replaces: old-foo',
              u'Suggests: pyfoo',
-             u'Provides: foo-master',
+             u'Provides: foo-main',
              u'Depends: biscuit',
              u'Conflicts: old-foo',
-             u'Pre-Depends: master-foo',
+             u'Pre-Depends: main-foo',
              u'Enhances: foo-super',
              u'Breaks: old-foo',
              u'Filename: pool/main/f/foo/foo-bin_666_all.deb',
@@ -158,8 +158,8 @@ class TestNativeArchiveIndexes(TestNativePublishingBase):
         """
         pub_binaries = self.getPubBinaries(
             depends='biscuit', recommends='foo-dev', suggests='pyfoo',
-            conflicts='old-foo', replaces='old-foo', provides='foo-master',
-            pre_depends='master-foo', enhances='foo-super', breaks='old-foo',
+            conflicts='old-foo', replaces='old-foo', provides='foo-main',
+            pre_depends='main-foo', enhances='foo-super', breaks='old-foo',
             user_defined_fields=[("Python-Version", ">= 2.4")])
         pub_binary = pub_binaries[0]
         self.assertEqual(
@@ -174,10 +174,10 @@ class TestNativeArchiveIndexes(TestNativePublishingBase):
              u'Recommends: foo-dev',
              u'Replaces: old-foo',
              u'Suggests: pyfoo',
-             u'Provides: foo-master',
+             u'Provides: foo-main',
              u'Depends: biscuit',
              u'Conflicts: old-foo',
-             u'Pre-Depends: master-foo',
+             u'Pre-Depends: main-foo',
              u'Enhances: foo-super',
              u'Breaks: old-foo',
              u'Filename: pool/main/f/foo/foo-bin_666_all.deb',

@@ -31,8 +31,8 @@ from lp.code.model.branchsubscription import BranchSubscription
 from lp.registry.model.person import Person
 from lp.services.database import bulk
 from lp.services.database.interfaces import (
-    IMasterStore,
-    ISlaveStore,
+    IMainStore,
+    ISubordinateStore,
     IStore,
     )
 from lp.services.database.sqlbase import get_transaction_timestamp
@@ -129,12 +129,12 @@ class TestLoaders(TestCaseWithFactory):
         # store even for the same object type.
         db_object = self.factory.makeComponent()
         db_object_type = bulk.get_type(db_object)
-        # Commit so the database object is available in both master
-        # and slave stores.
+        # Commit so the database object is available in both main
+        # and subordinate stores.
         transaction.commit()
         db_objects = set(
-            (IMasterStore(db_object).get(db_object_type, db_object.id),
-             ISlaveStore(db_object).get(db_object_type, db_object.id)))
+            (IMainStore(db_object).get(db_object_type, db_object.id),
+             ISubordinateStore(db_object).get(db_object_type, db_object.id)))
         db_queries = list(bulk.gen_reload_queries(db_objects))
         self.failUnlessEqual(2, len(db_queries))
         db_objects_loaded = set()
@@ -205,21 +205,21 @@ class TestLoaders(TestCaseWithFactory):
     def test_load_with_store(self):
         # load() can use an alternative store.
         db_object = self.factory.makeComponent()
-        # Commit so the database object is available in both master
-        # and slave stores.
+        # Commit so the database object is available in both main
+        # and subordinate stores.
         transaction.commit()
-        # Master store.
-        master_store = IMasterStore(db_object)
-        [db_object_from_master] = bulk.load(
-            Component, [db_object.id], store=master_store)
+        # Main store.
+        main_store = IMainStore(db_object)
+        [db_object_from_main] = bulk.load(
+            Component, [db_object.id], store=main_store)
         self.assertEqual(
-            Store.of(db_object_from_master), master_store)
-        # Slave store.
-        slave_store = ISlaveStore(db_object)
-        [db_object_from_slave] = bulk.load(
-            Component, [db_object.id], store=slave_store)
+            Store.of(db_object_from_main), main_store)
+        # Subordinate store.
+        subordinate_store = ISubordinateStore(db_object)
+        [db_object_from_subordinate] = bulk.load(
+            Component, [db_object.id], store=subordinate_store)
         self.assertEqual(
-            Store.of(db_object_from_slave), slave_store)
+            Store.of(db_object_from_subordinate), subordinate_store)
 
     def test_load_related(self):
         owning_objects = [

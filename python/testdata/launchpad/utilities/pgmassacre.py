@@ -4,7 +4,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 # This file is mirrored into lp:losa-db-scripts, so please keep that
-# version in sync with the master in the Launchpad tree.
+# version in sync with the main in the Launchpad tree.
 
 """
 dropdb only more so.

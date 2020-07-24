@@ -64,7 +64,7 @@ def run_gina(options, ztm, target_section):
     if component_override is not None:
         log.info("Override components to: %s", component_override)
     log.info("Architectures to import: %s", ", ".join(archs))
-    log.debug("Launchpad database: %s", config.database.rw_main_master)
+    log.debug("Launchpad database: %s", config.database.rw_main_main)
     log.info("SourcePackage Only: %s", source_only)
     log.info("SourcePackageName Only: %s", spnames_only)
     log.debug("Librarian: %s:%s", LIBRHOST, LIBRPORT)

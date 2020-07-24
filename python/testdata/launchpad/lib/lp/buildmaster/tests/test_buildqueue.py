@@ -17,15 +17,15 @@ from zope.component import (
     )
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import (
+from lp.buildmain.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interfaces.builder import IBuilderSet
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
-from lp.buildmaster.model.builder import specific_job_classes
-from lp.buildmaster.model.buildfarmjob import BuildFarmJobMixin
-from lp.buildmaster.model.buildqueue import (
+from lp.buildmain.interfaces.builder import IBuilderSet
+from lp.buildmain.interfaces.buildfarmjob import IBuildFarmJob
+from lp.buildmain.model.builder import specific_job_classes
+from lp.buildmain.model.buildfarmjob import BuildFarmJobMixin
+from lp.buildmain.model.buildqueue import (
     BuildQueue,
     get_builder_data,
     )

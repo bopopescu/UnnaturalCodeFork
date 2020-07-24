@@ -12,9 +12,9 @@ from cStringIO import StringIO
 from storm.locals import Store
 from zope.component import getUtility
 
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.model.buildfarmjob import BuildFarmJobMixin
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.model.buildfarmjob import BuildFarmJobMixin
+from lp.buildmain.model.buildqueue import BuildQueue
 from lp.services.helpers import filenameToContentType
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
@@ -54,15 +54,15 @@ class PackageBuildMixin(BuildFarmJobMixin):
         """See `IPackageBuild`."""
         raise NotImplementedError
 
-    def updateStatus(self, status, builder=None, slave_status=None,
+    def updateStatus(self, status, builder=None, subordinate_status=None,
                      date_started=None, date_finished=None):
         super(PackageBuildMixin, self).updateStatus(
-            status, builder=builder, slave_status=slave_status,
+            status, builder=builder, subordinate_status=subordinate_status,
             date_started=date_started, date_finished=date_finished)
 
-        if (status == BuildStatus.MANUALDEPWAIT and slave_status is not None
-            and slave_status.get('dependencies') is not None):
-            self.dependencies = unicode(slave_status.get('dependencies'))
+        if (status == BuildStatus.MANUALDEPWAIT and subordinate_status is not None
+            and subordinate_status.get('dependencies') is not None):
+            self.dependencies = unicode(subordinate_status.get('dependencies'))
         else:
             self.dependencies = None
 

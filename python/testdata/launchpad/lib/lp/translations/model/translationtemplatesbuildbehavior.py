@@ -3,7 +3,7 @@
 
 """An `IBuildFarmJobBehavior` for `TranslationTemplatesBuildJob`.
 
-Dispatches translation template build jobs to build-farm slaves.
+Dispatches translation template build jobs to build-farm subordinates.
 """
 
 __metaclass__ = type
@@ -22,12 +22,12 @@ from zope.component import getUtility
 from zope.interface import implements
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.builder import CannotBuild
-from lp.buildmaster.interfaces.buildfarmjobbehavior import (
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interfaces.builder import CannotBuild
+from lp.buildmain.interfaces.buildfarmjobbehavior import (
     IBuildFarmJobBehavior,
     )
-from lp.buildmaster.model.buildfarmjobbehavior import BuildFarmJobBehaviorBase
+from lp.buildmain.model.buildfarmjobbehavior import BuildFarmJobBehaviorBase
 from lp.registry.interfaces.productseries import IProductSeriesSet
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
@@ -36,13 +36,13 @@ from lp.translations.model.approver import TranslationBuildApprover
 
 
 class TranslationTemplatesBuildBehavior(BuildFarmJobBehaviorBase):
-    """Dispatches `TranslationTemplateBuildJob`s to slaves."""
+    """Dispatches `TranslationTemplateBuildJob`s to subordinates."""
     implements(IBuildFarmJobBehavior)
 
-    # Identify the type of job to the slave.
+    # Identify the type of job to the subordinate.
     build_type = 'translation-templates'
 
-    # Filename for the tarball of templates that the slave builds.
+    # Filename for the tarball of templates that the subordinate builds.
     templates_tarball_path = 'translation-templates.tar.gz'
 
     unsafe_chars = '[^a-zA-Z0-9_+-]'
@@ -53,7 +53,7 @@ class TranslationTemplatesBuildBehavior(BuildFarmJobBehaviorBase):
             self.unsafe_chars, '_', self.buildfarmjob.branch.unique_name)
         return "translationtemplates_%s_%d.txt" % (safe_name, self.build.id)
 
-    def dispatchBuildToSlave(self, build_queue_item, logger):
+    def dispatchBuildToSubordinate(self, build_queue_item, logger):
         """See `IBuildFarmJobBehavior`."""
         chroot = self._getChroot()
         if chroot is None:
@@ -61,7 +61,7 @@ class TranslationTemplatesBuildBehavior(BuildFarmJobBehaviorBase):
             raise CannotBuild("Unable to find a chroot for %s" %
                               distroarchseries.displayname)
         chroot_sha1 = chroot.content.sha1
-        d = self._slave.cacheFile(logger, chroot)
+        d = self._subordinate.cacheFile(logger, chroot)
 
         def got_cache_file(ignored):
             args = {
@@ -71,7 +71,7 @@ class TranslationTemplatesBuildBehavior(BuildFarmJobBehaviorBase):
 
             filemap = {}
 
-            return self._slave.build(
+            return self._subordinate.build(
                 self.getBuildCookie(), self.build_type, chroot_sha1, filemap,
                 args)
         return d.addCallback(got_cache_file)
@@ -91,19 +91,19 @@ class TranslationTemplatesBuildBehavior(BuildFarmJobBehaviorBase):
             self.buildfarmjob.branch.bzr_identity))
 
     def _readTarball(self, buildqueue, filemap, logger):
-        """Read tarball with generated translation templates from slave."""
+        """Read tarball with generated translation templates from subordinate."""
         if filemap is None:
-            logger.error("Slave returned no filemap.")
+            logger.error("Subordinate returned no filemap.")
             return defer.succeed(None)
 
-        slave_filename = filemap.get(self.templates_tarball_path)
-        if slave_filename is None:
-            logger.error("Did not find templates tarball in slave output.")
+        subordinate_filename = filemap.get(self.templates_tarball_path)
+        if subordinate_filename is None:
+            logger.error("Did not find templates tarball in subordinate output.")
             return defer.succeed(None)
 
         fd, fname = tempfile.mkstemp()
         tarball_file = os.fdopen(fd, 'wb')
-        d = self._slave.getFile(slave_filename, tarball_file)
+        d = self._subordinate.getFile(subordinate_filename, tarball_file)
         # getFile will close the file object.
         return d.addCallback(lambda ignored: fname)
 
@@ -118,23 +118,23 @@ class TranslationTemplatesBuildBehavior(BuildFarmJobBehaviorBase):
                 tarball, False, branch.owner, productseries=series,
                 approver_factory=TranslationBuildApprover)
 
-    def updateSlaveStatus(self, raw_slave_status, status):
+    def updateSubordinateStatus(self, raw_subordinate_status, status):
         """See `IBuildFarmJobBehavior`."""
         if status['builder_status'] == 'BuilderStatus.WAITING':
-            if len(raw_slave_status) >= 4:
-                status['filemap'] = raw_slave_status[3]
+            if len(raw_subordinate_status) >= 4:
+                status['filemap'] = raw_subordinate_status[3]
 
     @defer.inlineCallbacks
-    def handleStatus(self, queue_item, status, slave_status):
+    def handleStatus(self, queue_item, status, subordinate_status):
         """Deal with a finished build job.
 
-        Retrieves tarball and logs from the slave, then cleans up the
-        slave so it's ready for a next job and destroys the queue item.
+        Retrieves tarball and logs from the subordinate, then cleans up the
+        subordinate so it's ready for a next job and destroys the queue item.
 
         If this fails for whatever unforeseen reason, a future run will
         retry it.
         """
-        from lp.buildmaster.manager import BUILDD_MANAGER_LOG_NAME
+        from lp.buildmain.manager import BUILDD_MANAGER_LOG_NAME
         logger = logging.getLogger(BUILDD_MANAGER_LOG_NAME)
         logger.info(
             "Processing finished %s build %s (%s) from builder %s" % (
@@ -147,7 +147,7 @@ class TranslationTemplatesBuildBehavior(BuildFarmJobBehaviorBase):
                 BuildStatus.UPLOADING, builder=queue_item.builder)
             transaction.commit()
             logger.debug("Processing successful templates build.")
-            filemap = slave_status.get('filemap')
+            filemap = subordinate_status.get('filemap')
             filename = yield self._readTarball(queue_item, filemap, logger)
 
             # XXX 2010-11-12 bug=674575
@@ -178,8 +178,8 @@ class TranslationTemplatesBuildBehavior(BuildFarmJobBehaviorBase):
                 BuildStatus.FAILEDTOBUILD, builder=queue_item.builder)
         transaction.commit()
 
-        yield self.storeLogFromSlave(build_queue=queue_item)
+        yield self.storeLogFromSubordinate(build_queue=queue_item)
 
-        yield self._slave.clean()
+        yield self._subordinate.clean()
         queue_item.destroySelf()
         transaction.commit()

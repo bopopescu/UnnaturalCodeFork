@@ -10,8 +10,8 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.builder import IBuilderSet
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interfaces.builder import IBuilderSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import SourcePackageUrgency

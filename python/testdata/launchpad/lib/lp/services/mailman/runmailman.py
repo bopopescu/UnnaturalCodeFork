@@ -63,27 +63,27 @@ def mailmanctl(command, quiet=False, config=None, *additional_arguments):
 def stop_mailman(quiet=False, config=None):
     """Alias for mailmanctl('stop')."""
     mailmanctl('stop', quiet, config)
-    # Further, if the Mailman master pid file was not removed, then the
-    # master watcher, and probably one of its queue runners, did not die.
+    # Further, if the Mailman main pid file was not removed, then the
+    # main watcher, and probably one of its queue runners, did not die.
     # Kill it hard and clean up after it.
     if config is None:
         config = lp.services.config.config
     mailman_path = configure_prefix(config.mailman.build_prefix)
-    master_pid_path = os.path.join(mailman_path, 'data', 'master-qrunner.pid')
+    main_pid_path = os.path.join(mailman_path, 'data', 'main-qrunner.pid')
     try:
-        master_pid_file = open(master_pid_path)
+        main_pid_file = open(main_pid_path)
     except IOError as error:
         if error.errno == errno.ENOENT:
             # It doesn't exist, so we're all done.
             return
         raise
     try:
-        master_pid = int(master_pid_file.read().strip())
+        main_pid = int(main_pid_file.read().strip())
     finally:
-        master_pid_file.close()
+        main_pid_file.close()
     try:
         # Kill the entire process group.
-        os.kill(master_pid, -signal.SIGKILL)
+        os.kill(main_pid, -signal.SIGKILL)
     except OSError as error:
         if error.errno == errno.ESRCH:
             # The process does not exist.  It could be a zombie that has yet
@@ -91,7 +91,7 @@ def stop_mailman(quiet=False, config=None):
             return
         raise
     try:
-        os.remove(master_pid_path)
+        os.remove(main_pid_path)
     except OSError as error:
         if error.errno != errno.ENOENT:
             raise
@@ -101,7 +101,7 @@ def stop_mailman(quiet=False, config=None):
 
 
 def start_mailman(quiet=False, config=None):
-    """Start the Mailman master qrunner.
+    """Start the Mailman main qrunner.
 
     The client of start_mailman() is responsible for ensuring that
     stop_mailman() is called at the appropriate time.
@@ -121,7 +121,7 @@ def start_mailman(quiet=False, config=None):
 
     # Monkey-patch the installed Mailman 2.1 tree.
     monkey_patch(mailman_path, config)
-    # Start Mailman.  Pass in the -s flag so that any stale master pid files
+    # Start Mailman.  Pass in the -s flag so that any stale main pid files
     # will get deleted.  "Stale" means the process that owned the pid no
     # longer exists, so this can't hurt anything.
     mailmanctl('start', quiet, config, '-s')

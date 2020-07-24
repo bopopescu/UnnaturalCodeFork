@@ -19,7 +19,7 @@ from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
     )
-from lp.soyuz.scripts.ftpmasterbase import SoyuzScriptError
+from lp.soyuz.scripts.ftpmainbase import SoyuzScriptError
 from lp.soyuz.scripts.obsolete_distroseries import ObsoleteDistroseries
 from lp.testing import (
     TestCase,
@@ -41,7 +41,7 @@ class TestObsoleteDistroseriesScript(TestCase):
         if extra_args is None:
             extra_args = []
         script = os.path.join(
-            config.root, "scripts", "ftpmaster-tools",
+            config.root, "scripts", "ftpmain-tools",
             "obsolete-distroseries.py")
         args = [sys.executable, script, '-y']
         args.extend(extra_args)

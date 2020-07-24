@@ -28,7 +28,7 @@ from lp.services.config import (
     config,
     dbconfig,
     )
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IMainStore
 from lp.services.messaging import rabbit
 from lp.services.webapp.errorlog import (
     globalErrorUtility,
@@ -129,7 +129,7 @@ class TestPGBouncerFixtureWithCA(TestCase):
         transaction.abort()
 
         try:
-            IMasterStore(Person).find(Person).first()
+            IMainStore(Person).find(Person).first()
             return True
         except DisconnectionError:
             return False
@@ -180,7 +180,7 @@ class TestPGBouncerFixtureWithoutCA(TestCase):
 
     def is_db_available(self):
         # Direct connection to the DB.
-        con_str = dbconfig.rw_main_master + ' user=launchpad_main'
+        con_str = dbconfig.rw_main_main + ' user=launchpad_main'
         try:
             con = psycopg2.connect(con_str)
             cur = con.cursor()
@@ -273,7 +273,7 @@ class TestDisableTriggerFixture(TestCase):
 
     def setUp(self):
         super(TestDisableTriggerFixture, self).setUp()
-        con_str = dbconfig.rw_main_master + ' user=launchpad_main'
+        con_str = dbconfig.rw_main_main + ' user=launchpad_main'
         con = psycopg2.connect(con_str)
         con.set_isolation_level(0)
         self.cursor = con.cursor()

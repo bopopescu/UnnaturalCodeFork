@@ -7,7 +7,7 @@ __metaclass__ = type
 
 __all__ = [
     'BuildDaemonError',
-    'BuildSlaveFailure',
+    'BuildSubordinateFailure',
     'CannotBuild',
     'CannotFetchFile',
     'CannotResumeHost',
@@ -58,7 +58,7 @@ class BuildDaemonError(Exception):
 
 
 class CannotFetchFile(BuildDaemonError):
-    """The slave was unable to fetch the file."""
+    """The subordinate was unable to fetch the file."""
 
     def __init__(self, file_url, error_information):
         super(CannotFetchFile, self).__init__()
@@ -67,11 +67,11 @@ class CannotFetchFile(BuildDaemonError):
 
 
 class ProtocolVersionMismatch(BuildDaemonError):
-    """The build slave had a protocol version. This is a serious error."""
+    """The build subordinate had a protocol version. This is a serious error."""
 
 
 class CannotResumeHost(BuildDaemonError):
-    """The build slave virtual machine cannot be resumed."""
+    """The build subordinate virtual machine cannot be resumed."""
 
 
 # CannotBuild is intended to be the base class for a family of more specific
@@ -80,19 +80,19 @@ class CannotBuild(BuildDaemonError):
     """The requested build cannot be done."""
 
 
-class BuildSlaveFailure(BuildDaemonError):
-    """The build slave has suffered an error and cannot be used."""
+class BuildSubordinateFailure(BuildDaemonError):
+    """The build subordinate has suffered an error and cannot be used."""
 
 
 class IBuilder(IHasOwner):
-    """Build-slave information and state.
+    """Build-subordinate information and state.
 
-    Builder instance represents a single builder slave machine within the
+    Builder instance represents a single builder subordinate machine within the
     Launchpad Auto Build System. It should specify a 'processor' on which the
     machine is based and is able to build packages for; a URL, by which the
     machine is accessed through an XML-RPC interface; name, title for entity
     identification and browsing purposes; an LP-like owner which has
-    unrestricted access to the instance; the build slave machine status
+    unrestricted access to the instance; the build subordinate machine status
     representation, including the field/properties: virtualized, builderok,
     status, failnotes and currentjob.
     """
@@ -103,7 +103,7 @@ class IBuilder(IHasOwner):
     processor = exported(ReferenceChoice(
         title=_('Processor'), required=True, vocabulary='Processor',
         schema=IProcessor,
-        description=_('Build Slave Processor, used to identify '
+        description=_('Build Subordinate Processor, used to identify '
                       'which jobs can be built by this device.')),
         as_of='devel')
 
@@ -120,12 +120,12 @@ class IBuilder(IHasOwner):
 
     name = exported(TextLine(
         title=_('Name'), required=True, constraint=name_validator,
-        description=_('Builder Slave Name used for reference proposes')))
+        description=_('Builder Subordinate Name used for reference proposes')))
 
     title = exported(Title(
         title=_('Title'), required=True,
         description=_(
-            'The builder slave title. Should be just a few words.')))
+            'The builder subordinate title. Should be just a few words.')))
 
     virtualized = exported(Bool(
         title=_('Virtualized'), required=True, default=False,
@@ -135,7 +135,7 @@ class IBuilder(IHasOwner):
     manual = exported(Bool(
         title=_('Manual Mode'), required=False, default=False,
         description=_('The auto-build system does not dispatch '
-                      'jobs automatically for slaves in manual mode.')))
+                      'jobs automatically for subordinates in manual mode.')))
 
     builderok = exported(Bool(
         title=_('Builder State OK'), required=True, default=True,
@@ -148,7 +148,7 @@ class IBuilder(IHasOwner):
     vm_host = exported(TextLine(
         title=_('Virtual Machine Host'), required=False,
         description=_('The machine hostname hosting the virtual '
-                      'buildd-slave, e.g.: foobar-host.ppa')))
+                      'buildd-subordinate, e.g.: foobar-host.ppa')))
 
     active = exported(Bool(
         title=_('Publicly Visible'), required=True, default=True,
@@ -186,7 +186,7 @@ class IBuilder(IHasOwner):
         """
 
     def handleFailure(logger):
-        """Handle buildd slave failures.
+        """Handle buildd subordinate failures.
 
         Increment builder and (if possible) job failure counts.
         """

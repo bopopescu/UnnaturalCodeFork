@@ -13,7 +13,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.services.database.interfaces import (
-    ISlaveStore,
+    ISubordinateStore,
     IStore,
     )
 from lp.services.librarianserver.testing.fake import FakeLibrarian
@@ -486,14 +486,14 @@ class TestTranslationImportQueue(TestCaseWithFactory):
         # reshuffled to see if reportApprovalConflict can be fooled into
         # thinking it's a different error.  Make as sure as we can that
         # entry.error_output is not modified.
-        slave_entry = ISlaveStore(entry).get(
+        subordinate_entry = ISubordinateStore(entry).get(
             TranslationImportQueueEntry, entry.id)
-        slave_entry.setErrorOutput = FakeMethod()
-        slave_entry.reportApprovalConflict(
+        subordinate_entry.setErrorOutput = FakeMethod()
+        subordinate_entry.reportApprovalConflict(
             domain, len(templates), reversed(templates))
-        self.assertEqual(original_error, slave_entry.error_output)
+        self.assertEqual(original_error, subordinate_entry.error_output)
         self.assertIn(domain, original_error)
-        self.assertEqual(0, slave_entry.setErrorOutput.call_count)
+        self.assertEqual(0, subordinate_entry.setErrorOutput.call_count)
 
 
 class TestHelpers(TestCaseWithFactory):

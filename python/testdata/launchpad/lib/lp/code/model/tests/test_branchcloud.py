@@ -39,8 +39,8 @@ class TestBranchCloud(TestCaseWithFactory):
 
     def getProductsWithInfo(self, num_products=None):
         """Get product cloud information."""
-        # Since we use the slave store to get the information, we need to
-        # commit the transaction to make the information visible to the slave.
+        # Since we use the subordinate store to get the information, we need to
+        # commit the transaction to make the information visible to the subordinate.
         transaction.commit()
         cloud_info = self._branch_cloud.getProductsWithInfo(num_products)
 

@@ -76,12 +76,12 @@ class TestJobScheduler(TestCase):
 
     def setUp(self):
         super(TestJobScheduler, self).setUp()
-        self.masterlock = 'master.lock'
+        self.mainlock = 'main.lock'
 
     def tearDown(self):
         reset_logging()
-        if os.path.exists(self.masterlock):
-            os.unlink(self.masterlock)
+        if os.path.exists(self.mainlock):
+            os.unlink(self.mainlock)
         super(TestJobScheduler, self).tearDown()
 
     def makeJobScheduler(self, branch_type_names=()):
@@ -91,19 +91,19 @@ class TestJobScheduler(TestCase):
 
     def testManagerCreatesLocks(self):
         manager = self.makeJobScheduler()
-        manager.lockfilename = self.masterlock
+        manager.lockfilename = self.mainlock
         manager.lock()
-        self.failUnless(os.path.exists(self.masterlock))
+        self.failUnless(os.path.exists(self.mainlock))
         manager.unlock()
 
     def testManagerEnforcesLocks(self):
         manager = self.makeJobScheduler()
-        manager.lockfilename = self.masterlock
+        manager.lockfilename = self.mainlock
         manager.lock()
         anothermanager = self.makeJobScheduler()
-        anothermanager.lockfilename = self.masterlock
+        anothermanager.lockfilename = self.mainlock
         self.assertRaises(scheduler.LockError, anothermanager.lock)
-        self.failUnless(os.path.exists(self.masterlock))
+        self.failUnless(os.path.exists(self.mainlock))
         manager.unlock()
 
     def test_run_calls_acquireBranchToPull(self):
@@ -383,7 +383,7 @@ class TestPullerMonitorProtocol(ProcessTestsMixin, TestCase):
 
     def test_errorBeforeStatusReport(self):
         # If the subprocess exits before reporting success or failure, the
-        # puller master should record failure.
+        # puller main should record failure.
         self.protocol.do_startMirroring()
         self.protocol.errReceived('traceback')
         self.simulateProcessExit(clean=False)
@@ -418,20 +418,20 @@ class TestPullerMonitorProtocol(ProcessTestsMixin, TestCase):
             self.termination_deferred, error.ProcessTerminated)
 
 
-class TestPullerMaster(TestCase):
+class TestPullerMain(TestCase):
 
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
-        super(TestPullerMaster, self).setUp()
+        super(TestPullerMain, self).setUp()
         self.status_client = FakeCodehostingEndpointProxy()
         self.arbitrary_branch_id = 1
-        self.eventHandler = scheduler.PullerMaster(
+        self.eventHandler = scheduler.PullerMain(
             self.arbitrary_branch_id, 'arbitrary-source', 'arbitrary-dest',
             BranchType.HOSTED, None, logging.getLogger(), self.status_client)
 
     def test_unexpectedError(self):
-        """The puller master logs an OOPS when it receives an unexpected
+        """The puller main logs an OOPS when it receives an unexpected
         error.
         """
         fail = makeFailure(RuntimeError, 'error message')
@@ -493,20 +493,20 @@ class TestPullerMaster(TestCase):
         return deferred.addCallback(checkMirrorFailed)
 
 
-class TestPullerMasterSpawning(TestCase):
+class TestPullerMainSpawning(TestCase):
 
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
-        super(TestPullerMasterSpawning, self).setUp()
-        self.eventHandler = self.makePullerMaster('HOSTED')
+        super(TestPullerMainSpawning, self).setUp()
+        self.eventHandler = self.makePullerMain('HOSTED')
         self.patch(reactor, 'spawnProcess', self.spawnProcess)
         self.commands_spawned = []
 
-    def makePullerMaster(self, branch_type_name, default_stacked_on_url=None):
+    def makePullerMain(self, branch_type_name, default_stacked_on_url=None):
         if default_stacked_on_url is None:
             default_stacked_on_url = self.factory.getUniqueURL()
-        return scheduler.PullerMaster(
+        return scheduler.PullerMain(
             branch_id=self.factory.getUniqueInteger(),
             source_url=self.factory.getUniqueURL(),
             unique_name=self.factory.getUniqueString(),
@@ -519,25 +519,25 @@ class TestPullerMasterSpawning(TestCase):
         self.commands_spawned.append(arguments)
 
     def test_passes_default_stacked_on_url(self):
-        # If a default_stacked_on_url is passed into the master then that
+        # If a default_stacked_on_url is passed into the main then that
         # URL is sent to the command line.
         url = self.factory.getUniqueURL()
-        master = self.makePullerMaster('MIRRORED', default_stacked_on_url=url)
-        master.run()
+        main = self.makePullerMain('MIRRORED', default_stacked_on_url=url)
+        main.run()
         self.assertEqual(
             [url], [arguments[-1] for arguments in self.commands_spawned])
 
     def test_default_stacked_on_url_not_set(self):
-        # If a default_stacked_on_url is passed into the master as '' then
+        # If a default_stacked_on_url is passed into the main as '' then
         # the empty string is passed as an argument to the script.
-        master = self.makePullerMaster('MIRRORED', default_stacked_on_url='')
-        master.run()
+        main = self.makePullerMain('MIRRORED', default_stacked_on_url='')
+        main.run()
         self.assertEqual(
             [''], [arguments[-1] for arguments in self.commands_spawned])
 
 
 # The common parts of all the worker scripts.  See
-# TestPullerMasterIntegration.makePullerMaster for more.
+# TestPullerMainIntegration.makePullerMain for more.
 script_header = """\
 from optparse import OptionParser
 from lp.codehosting.puller.worker import PullerWorkerProtocol
@@ -552,14 +552,14 @@ protocol = PullerWorkerProtocol(sys.stdout)
 """
 
 
-class TestPullerMasterIntegration(PullerBranchTestCase):
-    """Tests for the puller master that launch sub-processes."""
+class TestPullerMainIntegration(PullerBranchTestCase):
+    """Tests for the puller main that launch sub-processes."""
 
     layer = ZopelessAppServerLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
 
     def setUp(self):
-        super(TestPullerMasterIntegration, self).setUp()
+        super(TestPullerMainIntegration, self).setUp()
         self.makeCleanDirectory(config.codehosting.mirrored_branches_root)
         self.bzr_tree = self.make_branch_and_tree('src-branch')
         url = urljoin(self.serveOverHTTP(), 'src-branch')
@@ -578,40 +578,40 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
         print error
         return failure
 
-    def makePullerMaster(self, cls=scheduler.PullerMaster, script_text=None,
+    def makePullerMain(self, cls=scheduler.PullerMain, script_text=None,
                          use_header=True):
-        """Construct a PullerMaster suited to the test environment.
+        """Construct a PullerMain suited to the test environment.
 
-        :param cls: The class of the PullerMaster to construct, defaulting to
-            the base PullerMaster.
-        :param script_text: If passed, set up the master to run a custom
+        :param cls: The class of the PullerMain to construct, defaulting to
+            the base PullerMain.
+        :param script_text: If passed, set up the main to run a custom
             script instead of 'scripts/mirror-branch.py'.  The passed text
             will be passed through textwrap.dedent() and appended to
             `script_header` (see above) which means the text can refer to the
             worker command line arguments, the destination branch and an
             instance of PullerWorkerProtocol.
         """
-        puller_master = cls(
+        puller_main = cls(
             self.db_branch.id, str(self.db_branch.url),
             self.db_branch.unique_name[1:], self.db_branch.branch_type.name,
             '', logging.getLogger(), self.client)
-        puller_master.destination_url = os.path.abspath('dest-branch')
+        puller_main.destination_url = os.path.abspath('dest-branch')
         if script_text is not None:
             script = open('script.py', 'w')
             if use_header:
                 script.write(script_header)
             script.write(textwrap.dedent(script_text))
             script.close()
-            puller_master.path_to_script = os.path.abspath('script.py')
-        return puller_master
+            puller_main.path_to_script = os.path.abspath('script.py')
+        return puller_main
 
     def doDefaultMirroring(self):
         """Run the subprocess to do the mirroring and check that it succeeded.
         """
         revision_id = self.bzr_tree.branch.last_revision()
 
-        puller_master = self.makePullerMaster()
-        deferred = puller_master.mirror()
+        puller_main = self.makePullerMain()
+        deferred = puller_main.mirror()
 
         def check_authserver_called(ignored):
             default_format = format_registry.get('default')()
@@ -631,7 +631,7 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
         def check_branch_mirrored(ignored):
             self.assertEqual(
                 revision_id,
-                Branch.open(puller_master.destination_url).last_revision())
+                Branch.open(puller_main.destination_url).last_revision())
             return ignored
         deferred.addCallback(check_branch_mirrored)
 
@@ -666,9 +666,9 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
         import sys
         sys.stderr.write(%r)
         """ % (expected_output,)
-        master = self.makePullerMaster(
+        main = self.makePullerMain(
             script_text=stderr_script, use_header=False)
-        deferred = master.run()
+        deferred = main.run()
 
         def check_oops_report(ignored):
             self.assertEqual(1, len(oops_logged))
@@ -696,8 +696,8 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
                 """Record the lock id on the listener."""
                 self.listener.lock_ids.append(id)
 
-        class PullerMasterWithLockID(scheduler.PullerMaster):
-            """A subclass of PullerMaster that allows recording of lock ids.
+        class PullerMainWithLockID(scheduler.PullerMain):
+            """A subclass of PullerMain that allows recording of lock ids.
             """
 
             protocol_class = PullerMonitorProtocolWithLockID
@@ -711,20 +711,20 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
         branch.unlock()
         """
 
-        puller_master = self.makePullerMaster(
-            PullerMasterWithLockID, check_lock_id_script)
-        puller_master.lock_ids = []
+        puller_main = self.makePullerMain(
+            PullerMainWithLockID, check_lock_id_script)
+        puller_main.lock_ids = []
 
         # We need to create a branch at the destination_url, so that the
         # subprocess can actually create a lock.
-        BzrDir.create_branch_convenience(puller_master.destination_url)
+        BzrDir.create_branch_convenience(puller_main.destination_url)
 
-        deferred = puller_master.mirror().addErrback(self._dumpError)
+        deferred = puller_main.mirror().addErrback(self._dumpError)
 
         def checkID(ignored):
             self.assertEqual(
-                puller_master.lock_ids,
-                [get_lock_id_for_branch_id(puller_master.branch_id)])
+                puller_main.lock_ids,
+                [get_lock_id_for_branch_id(puller_main.branch_id)])
 
         return deferred.addCallback(checkID)
 
@@ -761,14 +761,14 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
             def connectionMade(self):
                 """Record the protocol instance on the listener.
 
-                Normally the PullerMaster doesn't need to find the protocol
+                Normally the PullerMain doesn't need to find the protocol
                 again, but we need to to be able to kill the subprocess after
                 the test has completed.
                 """
                 self.listener.protocol = self
 
-        class LockingPullerMaster(scheduler.PullerMaster):
-            """Extend PullerMaster for the purposes of the test."""
+        class LockingPullerMain(scheduler.PullerMain):
+            """Extend PullerMain for the purposes of the test."""
 
             protocol_class = LockingPullerMonitorProtocol
 
@@ -806,12 +806,12 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
         branch_locked_deferred.addCallback(wrapper)
 
         # When it is done, successfully or not, we store the result on the
-        # puller master and kill the locking subprocess.
+        # puller main and kill the locking subprocess.
         def cleanup(result):
-            locking_puller_master.seen_final_result = True
-            locking_puller_master.final_result = result
+            locking_puller_main.seen_final_result = True
+            locking_puller_main.final_result = result
             try:
-                locking_puller_master.protocol.transport.signalProcess('INT')
+                locking_puller_main.protocol.transport.signalProcess('INT')
             except error.ProcessExitedAlready:
                 # We can only get here if the locking subprocess somehow
                 # manages to crash between locking the branch and being killed
@@ -820,20 +820,20 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
                 pass
         branch_locked_deferred.addBoth(cleanup)
 
-        locking_puller_master = self.makePullerMaster(
-            LockingPullerMaster, lock_and_wait_script)
-        locking_puller_master.branch_id += lock_id_delta
+        locking_puller_main = self.makePullerMain(
+            LockingPullerMain, lock_and_wait_script)
+        locking_puller_main.branch_id += lock_id_delta
 
         # We need to create a branch at the destination_url, so that the
         # subprocess can actually create a lock.
         BzrDir.create_branch_convenience(
-            locking_puller_master.destination_url)
+            locking_puller_main.destination_url)
 
         # Because when the deferred returned by 'func' is done we kill the
         # locking subprocess, we know that when the subprocess is done, the
         # test is done (note that this also applies if the locking script
         # fails to start up properly for some reason).
-        locking_process_deferred = locking_puller_master.mirror()
+        locking_process_deferred = locking_puller_main.mirror()
 
         def locking_process_callback(ignored):
             # There's no way the process should have exited normally!
@@ -841,14 +841,14 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
 
         def locking_process_errback(failure):
             # Exiting abnormally is expected, but there are two sub-cases:
-            if not locking_puller_master.seen_final_result:
+            if not locking_puller_main.seen_final_result:
                 # If the locking subprocess exits abnormally before we send
                 # the signal to kill it, that's bad.
                 return failure
             else:
                 # Afterwards, though that's the whole point :)
                 # Return the result of the function passed in.
-                return locking_puller_master.final_result
+                return locking_puller_main.final_result
 
         return locking_process_deferred.addCallbacks(
             locking_process_callback, locking_process_errback)
@@ -879,9 +879,9 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
         """
 
         def mirror_fails_to_unlock():
-            puller_master = self.makePullerMaster(
+            puller_main = self.makePullerMain(
                 script_text=lower_timeout_script)
-            deferred = puller_master.mirror()
+            deferred = puller_main.mirror()
 
             def check_mirror_failed(ignored):
                 self.assertEqual(len(self.client.calls), 1)

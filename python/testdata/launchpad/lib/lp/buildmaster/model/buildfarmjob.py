@@ -28,11 +28,11 @@ from zope.interface import (
     implements,
     )
 
-from lp.buildmaster.enums import (
+from lp.buildmain.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interfaces.buildfarmjob import (
+from lp.buildmain.interfaces.buildfarmjob import (
     IBuildFarmJob,
     IBuildFarmJobOld,
     IBuildFarmJobSet,
@@ -40,7 +40,7 @@ from lp.buildmaster.interfaces.buildfarmjob import (
     )
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
-    IMasterStore,
+    IMainStore,
     IStore,
     )
 
@@ -147,7 +147,7 @@ class BuildFarmJob(Storm):
         """See `IBuildFarmJobSource`."""
         build_farm_job = BuildFarmJob(
             job_type, status, date_created, builder, archive)
-        store = IMasterStore(BuildFarmJob)
+        store = IMainStore(BuildFarmJob)
         store.add(build_farm_job)
         return build_farm_job
 
@@ -211,7 +211,7 @@ class BuildFarmJobMixin:
         """See `IBuildFarmJob`."""
         self.log = log
 
-    def updateStatus(self, status, builder=None, slave_status=None,
+    def updateStatus(self, status, builder=None, subordinate_status=None,
                      date_started=None, date_finished=None):
         """See `IBuildFarmJob`."""
         self.build_farm_job.status = self.status = status
@@ -239,7 +239,7 @@ class BuildFarmJobMixin:
                 BuildStatus.NEEDSBUILD, BuildStatus.BUILDING,
                 BuildStatus.CANCELLING)):
             # XXX cprov 20060615 bug=120584: Currently buildduration includes
-            # the scanner latency, it should really be asking the slave for
+            # the scanner latency, it should really be asking the subordinate for
             # the duration spent building locally.
             self.build_farm_job.date_finished = self.date_finished = (
                 date_finished or datetime.datetime.now(pytz.UTC))

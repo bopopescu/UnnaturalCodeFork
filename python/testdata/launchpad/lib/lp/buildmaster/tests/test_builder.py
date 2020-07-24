@@ -6,13 +6,13 @@
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.builder import (
+from lp.buildmain.enums import BuildStatus
+from lp.buildmain.interfaces.builder import (
     IBuilder,
     IBuilderSet,
     )
-from lp.buildmaster.model.buildqueue import BuildQueue
-from lp.buildmaster.tests.mock_slaves import make_publisher
+from lp.buildmain.model.buildqueue import BuildQueue
+from lp.buildmain.tests.mock_subordinates import make_publisher
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.job.interfaces.job import JobStatus

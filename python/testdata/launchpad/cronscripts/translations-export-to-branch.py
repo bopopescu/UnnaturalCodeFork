@@ -10,7 +10,7 @@ access hosted branches.
 
 Besides committing to branches, the script updates Branch records in the
 database, to let the branch scanner know that the branches' contents
-have been updated.  For the rest, the script talks to the slave store.
+have been updated.  For the rest, the script talks to the subordinate store.
 """
 
 __metaclass__ = type

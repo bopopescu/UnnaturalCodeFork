@@ -52,7 +52,7 @@ from zope.security.proxy import (
     )
 
 from lp.app.errors import NotFoundError
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmain.enums import BuildStatus
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database import bulk
@@ -61,7 +61,7 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
-    IMasterStore,
+    IMainStore,
     IStore,
     )
 from lp.services.database.sqlbase import SQLBase
@@ -1104,7 +1104,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         available_architectures = [
             das.id for das in
                 self.distroarchseries.distroseries.architectures]
-        return IMasterStore(BinaryPackagePublishingHistory).find(
+        return IMainStore(BinaryPackagePublishingHistory).find(
                 BinaryPackagePublishingHistory,
                 BinaryPackagePublishingHistory.status.is_in(
                     active_publishing_status),
@@ -1425,7 +1425,7 @@ class PublishingSet:
         candidates = (
             make_package_condition(archive, das, bpr)
             for das, bpr, overrides in expanded)
-        already_published = IMasterStore(BinaryPackagePublishingHistory).find(
+        already_published = IMainStore(BinaryPackagePublishingHistory).find(
             (BinaryPackagePublishingHistory.distroarchseriesID,
              BinaryPackageRelease.binarypackagenameID,
              BinaryPackageRelease.version),
@@ -1973,7 +1973,7 @@ class PublishingSet:
         else:
             removed_by_id = removed_by.id
 
-        affected_pubs = IMasterStore(publication_class).find(
+        affected_pubs = IMainStore(publication_class).find(
             publication_class, publication_class.id.is_in(ids))
         affected_pubs.set(
             status=PackagePublishingStatus.DELETED,
@@ -1986,7 +1986,7 @@ class PublishingSet:
             debug_ids = [
                 pub.id for pub in self.findCorrespondingDDEBPublications(
                     affected_pubs)]
-            IMasterStore(publication_class).find(
+            IMainStore(publication_class).find(
                 BinaryPackagePublishingHistory,
                 BinaryPackagePublishingHistory.id.is_in(debug_ids)).set(
                     status=PackagePublishingStatus.DELETED,
@@ -2009,7 +2009,7 @@ class PublishingSet:
                 debug_bpph,
                 debug_bpph.binarypackagereleaseID ==
                     BinaryPackageRelease.debug_packageID)]
-        return IMasterStore(debug_bpph).using(*origin).find(
+        return IMainStore(debug_bpph).using(*origin).find(
             debug_bpph,
             deb_bpph.id.is_in(ids),
             debug_bpph.status.is_in(active_publishing_status),

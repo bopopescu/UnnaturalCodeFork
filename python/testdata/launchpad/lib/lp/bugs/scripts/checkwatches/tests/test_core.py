@@ -28,7 +28,7 @@ from lp.bugs.interfaces.bugwatch import BugWatchActivityStatus
 from lp.bugs.scripts import checkwatches
 from lp.bugs.scripts.checkwatches.base import WorkingBase
 from lp.bugs.scripts.checkwatches.core import (
-    CheckwatchesMaster,
+    CheckwatchesMain,
     LOGIN,
     TwistedThreadScheduler,
     )
@@ -106,7 +106,7 @@ class TestCheckwatchesWithSyncableGnomeProducts(TestCaseWithFactory):
 
         # Create an updater with a limited set of syncable gnome
         # products.
-        self.updater = checkwatches.CheckwatchesMaster(
+        self.updater = checkwatches.CheckwatchesMain(
             transaction.manager, BufferLogger(), ['test-product'])
 
     def tearDown(self):
@@ -164,7 +164,7 @@ class TestCheckwatchesWithSyncableGnomeProducts(TestCaseWithFactory):
         self.failIf(remote_system.sync_comments)
 
 
-class BrokenCheckwatchesMaster(CheckwatchesMaster):
+class BrokenCheckwatchesMain(CheckwatchesMain):
 
     error_code = None
 
@@ -173,12 +173,12 @@ class BrokenCheckwatchesMaster(CheckwatchesMaster):
             "http://example.com/", self.error_code, "Borked", "")
 
 
-class TestCheckwatchesMaster(TestCaseWithFactory):
+class TestCheckwatchesMain(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestCheckwatchesMaster, self).setUp()
+        super(TestCheckwatchesMain, self).setUp()
         transaction.abort()
 
     def test_bug_497141(self):
@@ -237,13 +237,13 @@ class TestCheckwatchesMaster(TestCaseWithFactory):
         # HTTP status codes of 502, 503 and 504 indicate connection
         # errors. An XML-RPC request that fails with one of those is
         # logged as a connection failure, not an OOPS.
-        master = BrokenCheckwatchesMaster(
+        main = BrokenCheckwatchesMain(
             transaction.manager, logger=BufferLogger())
-        master.error_code = 503
+        main.error_code = 503
         (bug_tracker, bug_watches) = self.factory.makeBugTrackerWithWatches(
             base_url='http://example.com/')
         transaction.commit()
-        master._updateBugTracker(bug_tracker)
+        main._updateBugTracker(bug_tracker)
         for bug_watch in bug_watches:
             self.assertEquals(
                 BugWatchActivityStatus.CONNECTION_ERROR,
@@ -251,19 +251,19 @@ class TestCheckwatchesMaster(TestCaseWithFactory):
         self.assertEqual(
             "INFO 'Connection Error' error updating http://example.com/: "
             "<ProtocolError for http://example.com/: 503 Borked>\n",
-            master.logger.getLogBuffer())
+            main.logger.getLogBuffer())
 
     def test_xmlrpc_other_errors_set_activity_properly(self):
         # HTTP status codes that indicate anything other than a
         # connection error still aren't OOPSes. They are logged as an
         # unknown error instead.
-        master = BrokenCheckwatchesMaster(
+        main = BrokenCheckwatchesMain(
             transaction.manager, logger=BufferLogger())
-        master.error_code = 403
+        main.error_code = 403
         (bug_tracker, bug_watches) = self.factory.makeBugTrackerWithWatches(
             base_url='http://example.com/')
         transaction.commit()
-        master._updateBugTracker(bug_tracker)
+        main._updateBugTracker(bug_tracker)
         for bug_watch in bug_watches:
             self.assertEquals(
                 BugWatchActivityStatus.UNKNOWN,
@@ -271,7 +271,7 @@ class TestCheckwatchesMaster(TestCaseWithFactory):
         self.assertEqual(
             "INFO 'Unknown' error updating http://example.com/: "
             "<ProtocolError for http://example.com/: 403 Borked>\n",
-            master.logger.getLogBuffer())
+            main.logger.getLogBuffer())
 
 
 class TestUpdateBugsWithLinkedQuestions(unittest.TestCase):
@@ -440,7 +440,7 @@ class ExternalBugTrackerForThreads(TestExternalBugTracker):
         return None
 
 
-class CheckwatchesMasterForThreads(CheckwatchesMaster):
+class CheckwatchesMainForThreads(CheckwatchesMain):
     """Fake updater.
 
     Plumbs an `ExternalBugTrackerForThreads` into a given output file,
@@ -450,7 +450,7 @@ class CheckwatchesMasterForThreads(CheckwatchesMaster):
 
     def __init__(self, output_file):
         logger = BufferLogger()
-        super(CheckwatchesMasterForThreads, self).__init__(
+        super(CheckwatchesMainForThreads, self).__init__(
             transaction.manager, logger)
         self.output_file = output_file
 
@@ -489,7 +489,7 @@ class TestTwistedThreadSchedulerInPlace(
         transaction.commit()
         # Prepare the updater with the Twisted scheduler.
         output_file = OutputFileForThreads()
-        threaded_bug_watch_updater = CheckwatchesMasterForThreads(output_file)
+        threaded_bug_watch_updater = CheckwatchesMainForThreads(output_file)
         threaded_bug_watch_scheduler = TwistedThreadScheduler(
             num_threads=10, install_signal_handlers=False)
         # Run the updater.

@@ -14,11 +14,11 @@ from zope.component import adapts
 from zope.interface import implements
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.interfaces.builder import CannotBuild
-from lp.buildmaster.interfaces.buildfarmjobbehavior import (
+from lp.buildmain.interfaces.builder import CannotBuild
+from lp.buildmain.interfaces.buildfarmjobbehavior import (
     IBuildFarmJobBehavior,
     )
-from lp.buildmaster.model.buildfarmjobbehavior import BuildFarmJobBehaviorBase
+from lp.buildmain.model.buildfarmjobbehavior import BuildFarmJobBehaviorBase
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuildJob,
     )
@@ -62,7 +62,7 @@ class RecipeBuildBehavior(BuildFarmJobBehaviorBase):
 
     def _extraBuildArgs(self, distroarchseries, logger=None):
         """
-        Return the extra arguments required by the slave for the given build.
+        Return the extra arguments required by the subordinate for the given build.
         """
         # Build extra arguments.
         args = {}
@@ -92,12 +92,12 @@ class RecipeBuildBehavior(BuildFarmJobBehaviorBase):
             distroarchseries, None)
         args['archive_private'] = self.build.archive.private
 
-        # config.builddmaster.bzr_builder_sources_list can contain a
+        # config.builddmain.bzr_builder_sources_list can contain a
         # sources.list entry for an archive that will contain a
         # bzr-builder package that needs to be used to build this
         # recipe.
         try:
-            extra_archive = config.builddmaster.bzr_builder_sources_list
+            extra_archive = config.builddmain.bzr_builder_sources_list
         except AttributeError:
             extra_archive = None
 
@@ -116,11 +116,11 @@ class RecipeBuildBehavior(BuildFarmJobBehaviorBase):
         args['distroseries_name'] = self.build.distroseries.name
         return args
 
-    def dispatchBuildToSlave(self, build_queue_id, logger):
+    def dispatchBuildToSubordinate(self, build_queue_id, logger):
         """See `IBuildFarmJobBehavior`."""
 
         distroseries = self.build.distroseries
-        # Start the binary package build on the slave builder. First
+        # Start the binary package build on the subordinate builder. First
         # we send the chroot.
         distroarchseries = distroseries.getDistroArchSeriesByProcessor(
             self._builder.processor)
@@ -135,7 +135,7 @@ class RecipeBuildBehavior(BuildFarmJobBehaviorBase):
                               distroarchseries.displayname)
         logger.info(
             "Sending chroot file for recipe build to %s" % self._builder.name)
-        d = self._slave.cacheFile(logger, chroot)
+        d = self._subordinate.cacheFile(logger, chroot)
 
         def got_cache_file(ignored):
             # Generate a string which can be used to cross-check when
@@ -147,7 +147,7 @@ class RecipeBuildBehavior(BuildFarmJobBehaviorBase):
             logger.info(
                 "Initiating build %s on %s" % (buildid, self._builder.url))
 
-            return self._slave.build(
+            return self._subordinate.build(
                 cookie, "sourcepackagerecipe", chroot_sha1, {}, args)
 
         def log_build_result((status, info)):
@@ -190,7 +190,7 @@ class RecipeBuildBehavior(BuildFarmJobBehaviorBase):
                     (build.title, build.id, build.pocket.name,
                      build.distroseries.name))
 
-    def updateSlaveStatus(self, raw_slave_status, status):
+    def updateSubordinateStatus(self, raw_subordinate_status, status):
         """Parse the recipe build specific status info into the status dict.
 
         This includes:
@@ -204,5 +204,5 @@ class RecipeBuildBehavior(BuildFarmJobBehaviorBase):
             )
         if (status['builder_status'] == 'BuilderStatus.WAITING' and
             status['build_status'] in build_status_with_files):
-            status['filemap'] = raw_slave_status[3]
-            status['dependencies'] = raw_slave_status[4]
+            status['filemap'] = raw_subordinate_status[3]
+            status['dependencies'] = raw_subordinate_status[4]

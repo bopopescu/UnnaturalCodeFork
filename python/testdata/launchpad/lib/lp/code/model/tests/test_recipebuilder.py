@@ -22,22 +22,22 @@ from twisted.internet import defer
 from twisted.trial.unittest import TestCase as TrialTestCase
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import (
+from lp.buildmain.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interactor import BuilderInteractor
-from lp.buildmaster.interfaces.builder import CannotBuild
-from lp.buildmaster.interfaces.buildfarmjobbehavior import (
+from lp.buildmain.interactor import BuilderInteractor
+from lp.buildmain.interfaces.builder import CannotBuild
+from lp.buildmain.interfaces.buildfarmjobbehavior import (
     IBuildFarmJobBehavior,
     )
-from lp.buildmaster.model.buildqueue import BuildQueue
-from lp.buildmaster.tests.mock_slaves import (
+from lp.buildmain.model.buildqueue import BuildQueue
+from lp.buildmain.tests.mock_subordinates import (
     MockBuilder,
-    OkSlave,
-    WaitingSlave,
+    OkSubordinate,
+    WaitingSubordinate,
     )
-from lp.buildmaster.tests.test_buildfarmjobbehavior import (
+from lp.buildmain.tests.test_buildfarmjobbehavior import (
     TestGetUploadMethodsMixin,
     TestHandleStatusMixin,
     )
@@ -126,7 +126,7 @@ class TestRecipeBuilder(TestCaseWithFactory):
         # valid builder set.
         job = self.makeJob()
         builder = MockBuilder("bob-de-bouwer")
-        job.setBuilder(builder, OkSlave())
+        job.setBuilder(builder, OkSubordinate())
         logger = BufferLogger()
         job.verifyBuildRequest(logger)
         self.assertEquals("", logger.getLogBuffer())
@@ -136,7 +136,7 @@ class TestRecipeBuilder(TestCaseWithFactory):
         job = self.makeJob()
         builder = MockBuilder('non-virtual builder')
         builder.virtualized = False
-        job.setBuilder(builder, OkSlave())
+        job.setBuilder(builder, OkSubordinate())
         logger = BufferLogger()
         e = self.assertRaises(AssertionError, job.verifyBuildRequest, logger)
         self.assertEqual(
@@ -148,7 +148,7 @@ class TestRecipeBuilder(TestCaseWithFactory):
             pocket=PackagePublishingPocket.SECURITY)
         job = self.factory.makeSourcePackageRecipeBuildJob(recipe_build=build)
         job = IBuildFarmJobBehavior(job.specific_job)
-        job.setBuilder(MockBuilder("bob-de-bouwer"), OkSlave())
+        job.setBuilder(MockBuilder("bob-de-bouwer"), OkSubordinate())
         e = self.assertRaises(
             AssertionError, job.verifyBuildRequest, BufferLogger())
         self.assertIn('invalid pocket due to the series status of', str(e))
@@ -166,7 +166,7 @@ class TestRecipeBuilder(TestCaseWithFactory):
     def _setBuilderConfig(self):
         """Setup a temporary builder config."""
         self.pushConfig(
-            "builddmaster",
+            "builddmain",
             bzr_builder_sources_list="deb http://foo %(series)s main")
 
     def test_extraBuildArgs(self):
@@ -254,7 +254,7 @@ class TestRecipeBuilder(TestCaseWithFactory):
         # Ensure _extraBuildArgs doesn't blow up with a badly formatted
         # bzr_builder_sources_list in the config.
         self.pushConfig(
-            "builddmaster",
+            "builddmain",
             bzr_builder_sources_list="deb http://foo %(series) main")
         # (note the missing 's' in %(series)
         job = self.makeJob()
@@ -297,17 +297,17 @@ class TestRecipeBuilder(TestCaseWithFactory):
             job.build, SourcePackageRecipeBuild.getByID(job.build.id))
 
     @run_test_with(AsynchronousDeferredRunTest)
-    def test_dispatchBuildToSlave(self):
-        # Ensure dispatchBuildToSlave will make the right calls to the slave
+    def test_dispatchBuildToSubordinate(self):
+        # Ensure dispatchBuildToSubordinate will make the right calls to the subordinate
         job = self.makeJob()
         test_publisher = SoyuzTestPublisher()
         test_publisher.addFakeChroots(job.build.distroseries)
-        slave = OkSlave()
+        subordinate = OkSubordinate()
         builder = MockBuilder("bob-de-bouwer")
         builder.processor = getUtility(IProcessorSet).getByName('386')
-        job.setBuilder(builder, slave)
+        job.setBuilder(builder, subordinate)
         logger = BufferLogger()
-        d = defer.maybeDeferred(job.dispatchBuildToSlave, "someid", logger)
+        d = defer.maybeDeferred(job.dispatchBuildToSubordinate, "someid", logger)
 
         def check_dispatch(ignored):
             self.assertThat(
@@ -317,8 +317,8 @@ class TestRecipeBuilder(TestCaseWithFactory):
                   INFO Initiating build 1-someid on http://fake:0000
                   """)))
             self.assertEquals(["ensurepresent", "build"],
-                              [call[0] for call in slave.call_log])
-            build_args = slave.call_log[1][1:]
+                              [call[0] for call in subordinate.call_log])
+            build_args = subordinate.call_log[1][1:]
             self.assertEquals(build_args[0], job.getBuildCookie())
             self.assertEquals(build_args[1], "sourcepackagerecipe")
             self.assertEquals(build_args[3], [])
@@ -328,16 +328,16 @@ class TestRecipeBuilder(TestCaseWithFactory):
         return d.addCallback(check_dispatch)
 
     @run_test_with(AsynchronousDeferredRunTest)
-    def test_dispatchBuildToSlave_nochroot(self):
-        # dispatchBuildToSlave will fail when there is not chroot tarball
+    def test_dispatchBuildToSubordinate_nochroot(self):
+        # dispatchBuildToSubordinate will fail when there is not chroot tarball
         # available for the distroseries to build for.
         job = self.makeJob()
         #test_publisher = SoyuzTestPublisher()
         builder = MockBuilder("bob-de-bouwer")
         builder.processor = getUtility(IProcessorSet).getByName('386')
-        job.setBuilder(builder, OkSlave())
+        job.setBuilder(builder, OkSubordinate())
         logger = BufferLogger()
-        d = defer.maybeDeferred(job.dispatchBuildToSlave, "someid", logger)
+        d = defer.maybeDeferred(job.dispatchBuildToSubordinate, "someid", logger)
         return assert_fails_with(d, CannotBuild)
 
 
@@ -357,20 +357,20 @@ class TestBuildNotifications(TrialTestCase):
         if fake_successful_upload:
             removeSecurityProxy(build).verifySuccessfulUpload = FakeMethod(
                 result=True)
-            # We overwrite the buildmaster root to use a temp directory.
+            # We overwrite the buildmain root to use a temp directory.
             tempdir = tempfile.mkdtemp()
             self.addCleanup(shutil.rmtree, tempdir)
             self.upload_root = tempdir
-            tmp_builddmaster_root = """
-            [builddmaster]
+            tmp_builddmain_root = """
+            [builddmain]
             root: %s
             """ % self.upload_root
-            config.push('tmp_builddmaster_root', tmp_builddmaster_root)
-            self.addCleanup(config.pop, 'tmp_builddmaster_root')
+            config.push('tmp_builddmain_root', tmp_builddmain_root)
+            self.addCleanup(config.pop, 'tmp_builddmain_root')
         self.queue_record.builder = self.factory.makeBuilder()
-        slave = WaitingSlave('BuildStatus.OK')
+        subordinate = WaitingSubordinate('BuildStatus.OK')
         return BuilderInteractor.getBuildBehavior(
-            self.queue_record, self.queue_record.builder, slave)
+            self.queue_record, self.queue_record.builder, subordinate)
 
     def assertDeferredNotifyCount(self, status, behavior, expected_count):
         d = behavior.handleStatus(self.queue_record, status, {'filemap': {}})
